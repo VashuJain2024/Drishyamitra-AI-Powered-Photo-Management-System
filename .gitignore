@@ -28,6 +28,8 @@ backend/verify_security.py
 backend/verify_security_v3.py
 backend/test_upload.py
 backend/backend_error.log 
+backend/migrate_err.txt
+backend/auth_test.py
 
 # Production & Build
 build/
@@ -41,7 +43,7 @@ backend/instance/
 backend/database/drishyamitra.db
 *.db
 *.sqlite
-backend/data/*
+backend/data/photos/*
 
 # Environment Variables
 .env
