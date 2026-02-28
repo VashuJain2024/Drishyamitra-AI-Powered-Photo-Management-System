@@ -4,6 +4,7 @@ from models.photo import Photo
 from models.person import Person
 from models.history import DeliveryHistory
 from models.database import db
+from services.delivery_service import DeliveryService
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +86,39 @@ def get_system_stats(params=None):
         logger.error(f"Error in get_system_stats: {e}")
         return "I'm having trouble retrieving your system stats."
 
+def share_photo_action(params=None):
+    """Action to share a photo via email"""
+    try:
+        user_id = params.get('user_id')
+        photo_id = params.get('photo_id')
+        recipient = params.get('recipient')
+        subject = params.get('subject', 'Shared Photo from Drishyamitra')
+        body = params.get('body', 'Hi! Here is a photo from Drishyamitra.')
+        
+        if not photo_id or not recipient:
+            return "Please provide both a photo ID and a recipient email."
+            
+        success, result = DeliveryService.share_photo_via_email(
+            user_id=user_id,
+            photo_id=photo_id,
+            recipient=recipient,
+            subject=subject,
+            body=body
+        )
+        
+        if success:
+            return f"Photo shared successfully with {recipient}. Message ID: {result}"
+        else:
+            return f"Failed to share photo: {result}"
+    except Exception as e:
+        logger.error(f"Error in share_photo_action: {e}")
+        return "Sorry, I couldn't share the photo."
+
 # Map intents to functions
 ACTION_MAP = {
     "get_deliveries": get_recent_deliveries,
     "find_photos": find_photos_by_person,
     "list_persons": list_known_persons,
-    "get_stats": get_system_stats
+    "get_stats": get_system_stats,
+    "share_photo": share_photo_action
 }

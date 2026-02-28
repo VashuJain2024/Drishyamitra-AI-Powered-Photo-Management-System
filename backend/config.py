@@ -63,6 +63,10 @@ class Config:
     # AI & Chatbot settings
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
     GROQ_MODEL   = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
+
+    # Gmail API configuration
+    GMAIL_CREDENTIALS_PATH = os.path.join(basedir, 'credentials.json')
+    GMAIL_TOKEN_PATH       = os.path.join(basedir, 'token.pickle')
     
     @staticmethod
     def init_app(app):

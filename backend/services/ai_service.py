@@ -20,6 +20,7 @@ class AIService:
         2. find_photos: Use this to find photos of a specific person. Params: {"name": "person name"}
         3. list_persons: Use this to list all identified persons in the library.
         4. get_stats: Use this to get general statistics (counts of photos/persons).
+        5. share_photo: Use this to share a photo via email. Params: {"photo_id": <int>, "recipient": "email@example.com", "subject": "optional", "body": "optional"}
 
         Instructions:
         - If the user's request matches one of these intents, respond in JSON format ONLY:
@@ -45,7 +46,7 @@ class AIService:
                 messages=messages,
                 temperature=0.2, # Lower temperature for better JSON adherence
                 max_tokens=512,
-                response_format={"type": "json_object"} if "intent" in message.lower() or "find" in message.lower() or "show" in message.lower() else None
+                response_format={"type": "json_object"} if any(word in message.lower() for word in ["intent", "find", "show", "send", "share", "email"]) else None
             )
             
             ai_content = completion.choices[0].message.content.strip()
