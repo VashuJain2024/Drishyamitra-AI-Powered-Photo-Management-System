@@ -1,33 +1,86 @@
-# Frontend
-
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
+node_modules/
 frontend/node_modules
-frontend/.pnp
-frontend/.pnp.js
+backend/venv
+backend/env
+.venv
+env/
+venv/
+ENV/
 
-# testing
+# Testing & Coverage
+coverage/
 frontend/coverage
+backend/backend_error.log
+backend/test_output.log
+backend/verify_error.log
+backend/verify_output.log
+backend/auth_test.py
+backend/check_db_photos.py
+backend/check_users.py
+backend/diagnose.py
+backend/final_verify.py
+backend/test_auth_flow.py
+backend/test_bcrypt.py
+backend/test_factory.py
+backend/verify_db_hashes.py
+backend/verify_security.py
+backend/verify_security_v3.py
+backend/test_upload.py
+backend/backend_error.log 
 
-# production
+# Production & Build
+build/
+dist/
 frontend/build
 
-# misc
-frontend/.DS_Store
+# Database
+backend/database/*.db
+backend/database/*.sqlite
+backend/instance/
+backend/database/drishyamitra.db
+*.db
+*.sqlite
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env
 frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+backend/.env
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.tox/
+.eggs/
+*.egg-info/
+*.egg
+.mypy_cache/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+frontend/.DS_Store
+backend/.DS_Store
+*.swp
+*.swo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
-
-frontend/.env
-frontend/.gitignore
-
-# Backend
-
-backend/venv
-backend/.env 
+*.log

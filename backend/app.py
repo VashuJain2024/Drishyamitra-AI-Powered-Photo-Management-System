@@ -19,6 +19,8 @@ def create_app():
     # Initialize extensions FIRST
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     JWTManager(app)
+    from flask_bcrypt import Bcrypt
+    Bcrypt(app)
     Config.init_app(app)
     init_db(app)
     migrate = Migrate(app, db)

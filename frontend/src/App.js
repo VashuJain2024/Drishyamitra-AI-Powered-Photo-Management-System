@@ -7,9 +7,17 @@ if (!API_BASE.endsWith('/api')) {
 }
 
 function App() {
-  const [view, setView] = useState('landing'); // landing, auth, dashboard, chat
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  };
+
+  const initialToken = getCookie('token');
+  const [view, setView] = useState(initialToken ? 'dashboard' : 'landing'); // landing, auth, dashboard, chat
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(initialToken);
   const [photos, setPhotos] = useState([]);
   const [stats, setStats] = useState({ photo_count: 0, person_count: 0, history_count: 0 });
   const [chatOpen, setChatOpen] = useState(false);
@@ -103,8 +111,8 @@ function App() {
       if (data.status === 'success') {
         if (authMode === 'login') {
           setUser(data.data.user);
-          setToken(data.data.token);
-          localStorage.setItem('token', data.data.token);
+          setToken(data.data.access_token);
+          document.cookie = `token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
           setView('dashboard');
         } else {
           alert("Registration successful! Please login.");
@@ -157,7 +165,7 @@ function App() {
         <div className="logo">Drishyamitra<span>AI</span></div>
         <div className="nav-links">
           {token ? (
-            <button className="btn-primary" onClick={() => { localStorage.removeItem('token'); setToken(null); setView('landing'); }}>Logout</button>
+            <button className="btn-primary" onClick={() => { document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; setToken(null); setView('landing'); }}>Logout</button>
           ) : (
             <button className="btn-primary" onClick={() => setView('auth')}>Login</button>
           )}

@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from utils.responses import success_response, error_response
-from utils.decorators import validate_json, log_request
+from utils.validation import validate_json_fields
 from services.ai_service import AIService
 from datetime import datetime
 
@@ -8,20 +8,21 @@ chat_bp = Blueprint('chat', __name__)
 ai_service = AIService()
 
 @chat_bp.route('/', methods=['POST'])
-@log_request
-@validate_json('message')
+@validate_json_fields('message')
 def chat():
     """AI Chat Endpoint"""
     data = request.get_json()
     user_message = data.get('message')
     history = data.get('history', [])
+    provider = data.get('provider', 'groq')
 
     try:
         # Get AI response
-        ai_response = ai_service.get_response(user_message, history)
+        ai_response = ai_service.get_response(user_message, history, provider=provider)
         
         return success_response({
-            "response": ai_response,
+            "answer": ai_response,
+            "provider": provider,
             "timestamp": datetime.utcnow().isoformat()
         }, message="AI response generated successfully")
     
