@@ -1,10 +1,18 @@
+"""
+Celery background task: process faces in an uploaded photo.
+Uses FaceRecognitionService (Facenet512 + RetinaFace + MTCNN pipeline).
+"""
+
 import logging
-from celery_app import celery
-from flask import current_app
 import os
 import shutil
 
+from celery_app import celery
+
+logger = logging.getLogger(__name__)
+
 _flask_app = None
+
 
 def get_app():
     global _flask_app
@@ -13,108 +21,138 @@ def get_app():
         _flask_app = create_app()
     return _flask_app
 
-@celery.task(bind=True, name="services.tasks.process_photo_faces")
-def process_photo_faces(self, photo_id):
-    """Background task to detect and match faces in an uploaded photo"""
+
+@celery.task(bind=True, name="services.tasks.process_photo_faces", max_retries=3)
+def process_photo_faces(self, photo_id: int):
+    """
+    Celery task: detect, embed, and match faces in a photo.
+
+    Pipeline
+    --------
+    1. Fetch Photo record and resolve absolute path.
+    2. Run FaceRecognitionService.detect_and_extract_faces (Facenet512 / RetinaFace).
+    3. Run .extract_faces_with_landmarks (MTCNN landmarks).
+    4. For each face — match against user's existing profiles (cosine similarity).
+    5. Auto-create an unknown-person record if no match found.
+    6. Persist Face records (bbox, embedding, landmarks, confidence, model_version).
+    7. Optionally copy photo into a per-person organised folder.
+    """
     app = get_app()
     with app.app_context():
-        # Imports needed inside the app context
         from models.database import db
         from models.photo import Photo
         from models.face import Face
         from models.person import Person
         from services.face_recognition import FaceRecognitionService
-        
+
         try:
             photo = Photo.query.get(photo_id)
             if not photo:
-                logging.error(f"process_photo_faces task failed: Photo {photo_id} not found.")
+                logger.error(f"process_photo_faces: Photo {photo_id} not found")
                 return {"status": "error", "message": "Photo not found"}
-                
-            service = FaceRecognitionService()
-            # Construct absolute path to the image
-            abs_image_path = os.path.join(app.config['UPLOAD_FOLDER'], photo.filename)
-            
-            if not os.path.exists(abs_image_path):
-                logging.error(f"Image file missing: {abs_image_path}")
+
+            abs_path = os.path.join(app.config["UPLOAD_FOLDER"], photo.filename)
+            if not os.path.exists(abs_path):
+                logger.error(f"process_photo_faces: Image missing at {abs_path}")
                 return {"status": "error", "message": "Image file missing"}
-                
-            # 1. Detect faces and embeddings
-            faces_data = service.detect_and_extract_faces(abs_image_path)
-            
+
+            service = FaceRecognitionService()
+
+            # ---- Stage 1: Detection + Facenet512 embeddings ----
+            faces_data = service.detect_and_extract_faces(abs_path)
             if not faces_data:
-                logging.info(f"No faces found in photo {photo_id}")
-                return {"status": "success", "message": "No faces found", "count": 0}
-            
-            matches = []
-            new_faces_created = 0
-            
-            # 2. Iterate each detected face
-            for face_info in faces_data:
-                embedding = face_info.get("embedding")
+                logger.info(f"No faces found in photo {photo_id}")
+                return {"status": "success", "message": "No faces detected", "count": 0}
+
+            # ---- Stage 2: MTCNN landmarks (best-effort) ----
+            landmark_items = service.extract_faces_with_landmarks(abs_path)
+            landmark_map = {i: item.get("landmarks", {}) for i, item in enumerate(landmark_items)}
+
+            matched_names  = []
+            faces_stored   = 0
+
+            for idx, face_info in enumerate(faces_data):
+                embedding   = face_info.get("embedding")
                 facial_area = face_info.get("facial_area", {})
-                confidence = face_info.get("face_confidence", 0.0)
-                
-                # Bounding box as JSON list: [x, y, w, h]
+                confidence  = face_info.get("face_confidence", face_info.get("confidence", 0.0))
+                landmarks   = landmark_map.get(idx, {})
+
                 bbox = [
-                    facial_area.get("x", 0), 
-                    facial_area.get("y", 0), 
-                    facial_area.get("w", 0), 
-                    facial_area.get("h", 0)
+                    facial_area.get("x", 0),
+                    facial_area.get("y", 0),
+                    facial_area.get("w", 0),
+                    facial_area.get("h", 0),
                 ]
-                
+
                 if not embedding:
+                    logger.warning(f"Skipping face #{idx} in photo {photo_id} — empty embedding")
                     continue
-                    
-                # 3. Match against existing DB profiles for this user
-                matched_person, similarity = service.match_face(embedding, photo.user_id)
-                person_id = matched_person.id if matched_person else None
-                
-                if matched_person:
-                    matches.append(matched_person.name)
-                
-                # 4. Store the face embedding and results in DB
+
+                # ---- Stage 3: Match ----
+                matched_person, scores = service.match_face(embedding, photo.user_id)
+
+                # ---- Stage 4: Auto-create if unknown ----
+                if matched_person is None:
+                    matched_person = service.auto_create_person(photo.user_id)
+                    logger.info(
+                        f"Created new unknown person '{matched_person.name}' "
+                        f"for user {photo.user_id}"
+                    )
+                else:
+                    matched_names.append(matched_person.name)
+                    logger.info(
+                        f"Matched face to '{matched_person.name}' "
+                        f"(cos_dist={scores['cosine_distance']:.4f}, "
+                        f"sim={scores['similarity']:.4f})"
+                    )
+
+                # ---- Stage 5: Persist ----
                 new_face = Face(
-                    photo_id=photo.id,
-                    person_id=person_id,
-                    bounding_box=bbox,
-                    embedding=embedding,
-                    confidence=confidence
+                    photo_id      = photo.id,
+                    person_id     = matched_person.id,
+                    bounding_box  = bbox,
+                    embedding     = embedding,
+                    landmarks     = landmarks,
+                    confidence    = float(confidence),
+                    model_version = FaceRecognitionService.MODEL_VERSION,
                 )
                 db.session.add(new_face)
-                new_faces_created += 1
-                
-            # Update DB with all new faces
+                faces_stored += 1
+
             db.session.commit()
-            
-            # --- Automated Folder Organization ---
-            if matches:
-                organized_folder = app.config.get('ORGANIZED_FOLDER', os.path.join(app.config.get('UPLOAD_FOLDER', ''), 'organized'))
-                user_folder = os.path.join(organized_folder, f"user_{photo.user_id}")
-                
-                for match_name in set(matches):
-                    try:
-                        safe_name = "".join([c for c in match_name if c.isalpha() or c.isdigit() or c in (' ', '-', '_')]).rstrip()
-                        person_dir = os.path.join(user_folder, safe_name)
-                        os.makedirs(person_dir, exist_ok=True)
-                        
-                        target_path = os.path.join(person_dir, photo.filename)
-                        if not os.path.exists(target_path):
-                            shutil.copy2(abs_image_path, target_path)
-                            logging.info(f"Organized photo into {target_path}")
-                    except Exception as e:
-                        logging.error(f"Error organizing photo into {match_name} folder: {e}")
-            # -------------------------------------
-            
-            logging.info(f"Processed photo {photo_id}: Found {len(faces_data)} faces. Matches: {matches}")
+            service.invalidate_cache(photo.user_id)
+
+            # ---- Stage 6: Organise photos into per-person folders ----
+            if matched_names:
+                organized_root = app.config.get(
+                    "ORGANIZED_FOLDER",
+                    os.path.join(app.config.get("UPLOAD_FOLDER", ""), "organized"),
+                )
+                user_dir = os.path.join(organized_root, f"user_{photo.user_id}")
+
+                for name in set(matched_names):
+                    safe_name   = "".join(c for c in name if c.isalnum() or c in " -_").strip()
+                    person_dir  = os.path.join(user_dir, safe_name)
+                    os.makedirs(person_dir, exist_ok=True)
+                    target      = os.path.join(person_dir, photo.filename)
+                    if not os.path.exists(target):
+                        shutil.copy2(abs_path, target)
+                        logger.info(f"Organised photo → {target}")
+
+            logger.info(
+                f"Photo {photo_id} processed: "
+                f"{len(faces_data)} detected, {faces_stored} stored, "
+                f"matches={matched_names}"
+            )
             return {
-                "status": "success",
+                "status":         "success",
                 "faces_detected": len(faces_data),
-                "faces_stored": new_faces_created,
-                "matches": matches
+                "faces_stored":   faces_stored,
+                "matches":        matched_names,
             }
 
-        except Exception as e:
+        except Exception as exc:
             db.session.rollback()
-            logging.error(f"Exception in process_photo_faces: {e}")
-            return {"status": "error", "message": str(e)}
+            logger.error(f"process_photo_faces exception (photo {photo_id}): {exc}")
+            # Retry with exponential back-off
+            raise self.retry(exc=exc, countdown=2 ** self.request.retries)

@@ -50,15 +50,22 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     JWT_COOKIE_SECURE = True
     
-    # Upload Configurations
-    UPLOAD_FOLDER = os.path.join(basedir, 'data', 'photos')
-    EMBEDDINGS_FOLDER = os.path.join(basedir, 'data', 'embeddings')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+    # Upload & storage
+    UPLOAD_FOLDER      = os.path.join(basedir, 'data', 'photos')
+    EMBEDDINGS_FOLDER  = os.path.join(basedir, 'data', 'embeddings')
+    ORGANIZED_FOLDER   = os.path.join(basedir, 'data', 'organized')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
+
+    # Face recognition pipeline settings
+    FACE_MODEL    = os.environ.get('FACE_MODEL', 'Facenet512')
+    FACE_DETECTOR = os.environ.get('FACE_DETECTOR', 'retinaface')
     
     @staticmethod
     def init_app(app):
-        # Create upload folder if it doesn't exist
-        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+        # Create all data directories
+        os.makedirs(Config.UPLOAD_FOLDER,     exist_ok=True)
+        os.makedirs(Config.EMBEDDINGS_FOLDER, exist_ok=True)
+        os.makedirs(Config.ORGANIZED_FOLDER,  exist_ok=True)
         
         # Ensure database directory exists for SQLite
         db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')

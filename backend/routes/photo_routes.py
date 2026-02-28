@@ -57,9 +57,16 @@ def upload():
         db.session.add(photo)
         db.session.commit()
         
-        # 5. Trigger background face processing task
-        process_photo_faces.delay(photo.id)
-        
+        # 5. Trigger background face processing task (with user context for matching)
+        try:
+            process_photo_faces.delay(photo.id)
+        except Exception:
+            # Celery broker unavailable — fall back to async thread
+            from services.face_service import FaceService
+            FaceService.process_photo_async(
+                current_app._get_current_object(), photo.id, filepath, user_id
+            )
+
         return success_response(photo.to_dict(), "Photo uploaded and registered successfully", 201)
     
     except Exception as e:
