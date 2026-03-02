@@ -70,23 +70,20 @@ class FaceRecognitionService:
     # ------------------------------------------------------------------
 
     def _get_user_embeddings(self, user_id: int) -> list:
-        """Return user embeddings from cache or DB."""
-        now = time.time()
-        if user_id in self._emb_cache and (now - self._cache_ts.get(user_id, 0)) < self.CACHE_TTL:
-            logger.debug(f"Cache hit for user {user_id}")
-            return self._emb_cache[user_id]
-
-        logger.debug(f"Cache miss for user {user_id} — querying DB")
-        persons = Person.query.filter_by(user_id=user_id).all()
+        """Return user embeddings from DB (cache disabled for real-time sync)."""
+        from sqlalchemy.orm import joinedload
+        
+        logger.debug(f"Querying latest embeddings for user {user_id}")
+        # Use joinedload to fetch faces in the same query to avoid N+1 issues
+        persons = Person.query.options(joinedload(Person.faces)).filter_by(user_id=user_id).all()
+        
         data = []
         for person in persons:
             for face in person.faces:
                 if face.embedding:
                     data.append({"person": person, "embedding": face.embedding})
 
-        self._emb_cache[user_id]  = data
-        self._cache_ts[user_id]   = now
-        logger.info(f"Loaded {len(data)} embeddings for user {user_id} into cache")
+        logger.info(f"Loaded {len(data)} embeddings for user {user_id}")
         return data
 
     def invalidate_cache(self, user_id: int) -> None:

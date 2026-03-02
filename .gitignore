@@ -2,8 +2,10 @@
 node_modules/
 frontend/node_modules/
 frontend/build/
+frontend/dist/
 frontend/coverage/
 frontend/.env*
+frontend/npm-debug.log*
 
 # --- Backend (Python) ---
 backend/venv/
@@ -18,49 +20,50 @@ __pycache__/
 .pytest_cache/
 .tox/
 .eggs/
-*.egg-info/
+.egg-info/
 *.egg
 .mypy_cache/
+.python-version
 backend/.env
 backend/*.log
+backend/backend_error.log
 backend/auth.json
 backend/credentials.json
 backend/token.pickle
-backend/backend_error.log
 
 # --- Database & Storage ---
 *.db
 *.sqlite
+*.db-journal
+*.db-shm
+*.db-wal
 backend/database/*.db
 backend/database/*.sqlite
+backend/database/*.db-*
 backend/instance/
-backend/data/photos/
-backend/data/embeddings/
-backend/data/organized/
+backend/data/
+!backend/data/.gitkeep
 
 # --- Redis ---
-redis/
 dump.rdb
+temp-*.rdb
+*.rdb
 
 # --- WhatsApp Service ---
 whatsapp-service/node_modules/
+whatsapp-service/dist/
 whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_cache/
 whatsapp-service/uploads/
-whatsapp-service/clean_wa.py
+whatsapp-service/.env*
 
 # --- Testing & Utils ---
 coverage/
+.nyc_output/
 backend/test_*.py
 backend/*_test.py
 **/*_test.py
 **/test_*.py
-backend/init_db_light.py
-backend/create_test_user.py
-backend/check_db_status.py
-backend/db_check_light.py
-backend/retrigger_faces.py
-backend/retrigger_light.py
 
 # --- Environment & Secrets ---
 .env*

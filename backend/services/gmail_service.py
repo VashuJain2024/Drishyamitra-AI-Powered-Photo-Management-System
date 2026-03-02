@@ -33,28 +33,36 @@ class GmailService:
             
             message.attach(MIMEText(body, 'plain'))
 
-            if attachment_path and os.path.exists(attachment_path):
-                # Check file size (Gmail limit is ~25MB)
-                file_size = os.path.getsize(attachment_path)
-                if file_size > 20 * 1024 * 1024:
-                    return False, "Attachment too large. Max size 20MB."
+            if attachment_path:
+                paths = attachment_path if isinstance(attachment_path, list) else [attachment_path]
+                total_size = 0
+                
+                for path in paths:
+                    if not os.path.exists(path):
+                        continue
+                        
+                    file_size = os.path.getsize(path)
+                    total_size += file_size
+                    
+                    if total_size > 22 * 1024 * 1024: # Gmail limit is ~25MB total
+                        return False, f"Total attachments size exceeds 22MB limit. (Photo: {os.path.basename(path)})"
 
-                content_type, encoding = mimetypes.guess_type(attachment_path)
-                if content_type is None or encoding is not None:
-                    content_type = 'application/octet-stream'
-                
-                main_type, sub_type = content_type.split('/', 1)
-                
-                with open(attachment_path, 'rb') as f:
-                    file_data = f.read()
+                    content_type, encoding = mimetypes.guess_type(path)
+                    if content_type is None or encoding is not None:
+                        content_type = 'application/octet-stream'
+                    
+                    main_type, sub_type = content_type.split('/', 1)
+                    
+                    with open(path, 'rb') as f:
+                        file_data = f.read()
 
-                if main_type == 'image':
-                    part = MIMEImage(file_data, _subtype=sub_type)
-                else:
-                    part = MIMEApplication(file_data, _subtype=sub_type)
-                
-                part.add_header('Content-Disposition', 'attachment', filename=os.path.basename(attachment_path))
-                message.attach(part)
+                    if main_type == 'image':
+                        part = MIMEImage(file_data, _subtype=sub_type)
+                    else:
+                        part = MIMEApplication(file_data, _subtype=sub_type)
+                    
+                    part.add_header('Content-Disposition', 'attachment', filename=os.path.basename(path))
+                    message.attach(part)
 
             # Connect and send
             with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port) as server:

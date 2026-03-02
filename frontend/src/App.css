@@ -1,121 +1,143 @@
-.navbar {
+/* Layout */
+.App {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2rem 4rem;
-  position: sticky;
-  top: 0;
+  min-height: 100vh;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.App::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
   z-index: 100;
+  padding: 2rem 1.5rem;
 }
 
-.logo {
-  font-size: 1.8rem;
+.sidebar-logo {
+  font-size: 1.5rem;
   font-weight: 800;
-  font-family: 'Outfit';
+  margin-bottom: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.logo span {
-  color: var(--primary);
+.sidebar-logo span {
   background: linear-gradient(to right, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
 }
 
-/* Hero Section */
-.hero {
-  text-align: center;
-  padding: 6rem 0;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 
-.hero-title {
-  font-size: 4.5rem;
-  line-height: 1.1;
-  margin-bottom: 2rem;
+.nav-item:hover {
+  background: var(--glass);
+  color: var(--text-main);
 }
 
-.hero-title span {
-  display: block;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.05));
+  color: var(--primary-light);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  padding: 4rem 6rem;
+  max-width: 1600px;
+  width: calc(100vw - var(--sidebar-w));
+}
+
+.navbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: linear-gradient(to bottom, #fff, #94a3b8);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.hero-subtitle {
-  font-size: 1.2rem;
+.stat-label {
   color: var(--text-dim);
-  margin-bottom: 3rem;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
 }
 
-.btn-large {
-  padding: 16px 48px;
-  font-size: 1.1rem;
-}
-
-/* Auth Card */
-.auth-card {
-  max-width: 400px;
-  margin: 4rem auto;
-  padding: 3rem;
-  text-align: center;
-}
-
-.auth-card h2 {
-  margin-bottom: 2rem;
-}
-
-.w-full {
-  width: 100%;
-}
-
-/* Dashboard */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 4rem;
-}
-
-.stat-box {
-  padding: 2rem;
-  text-align: center;
-}
-
-.stat-box h3 {
-  font-size: 2.5rem;
-  color: var(--primary);
-}
-
-.section-header {
+/* Gallery */
+.gallery-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-}
-
-.upload-btn-wrapper {
-  position: relative;
-  overflow: hidden;
-  display: inline-block;
-}
-
-.upload-btn-wrapper input[type=file] {
-  font-size: 100px;
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 
 .photo-grid {
@@ -126,102 +148,184 @@
 
 .photo-card {
   padding: 12px;
+  border-radius: 20px;
+}
+
+.photo-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 1rem;
 }
 
 .photo-img {
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  background: var(--glass);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.photo-info {
-  text-align: left;
-  padding: 0 4px;
+.photo-card:hover .photo-img {
+  transform: scale(1.1);
 }
 
-.photo-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 60%);
+  display: flex;
+  align-items: flex-end;
+  padding: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.photo-info small {
-  color: var(--text-dim);
+.photo-card:hover .photo-overlay {
+  opacity: 1;
 }
 
-.empty-state {
-  grid-column: 1 / -1;
-  padding: 4rem;
-  text-align: center;
-  color: var(--text-dim);
-}
-
-/* Chat Widget */
-.chat-widget {
+/* Chat Assistant */
+.chat-drawer {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   z-index: 1000;
 }
 
-.chat-toggle {
-  border-radius: 50px;
-  padding: 12px 24px;
+.chat-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
 }
 
-.chat-window {
+.chat-popup {
   position: absolute;
-  bottom: 70px;
+  bottom: 80px;
   right: 0;
-  width: 350px;
-  height: 500px;
+  width: 400px;
+  height: 600px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.chat-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--glass-border);
-  font-weight: 600;
-  background: var(--primary);
 }
 
 .chat-messages {
   flex: 1;
-  padding: 1.5rem;
+  padding: 2rem;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.msg {
-  padding: 10px 14px;
-  border-radius: 12px;
+.message-bubble {
   max-width: 80%;
-  margin-bottom: 1rem;
+  padding: 12px 18px;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
-.msg.bot {
+.msg-bot {
   background: var(--glass);
+  border: 1px solid var(--glass-border);
   align-self: flex-start;
+  border-bottom-left-radius: 4px;
 }
 
-.msg.user {
+.msg-user {
   background: var(--primary);
-  align-self: flex-end;
   color: white;
-  margin-left: auto;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
 }
 
-.chat-input {
-  padding: 1rem;
-  border-top: 1px solid var(--glass-border);
+/* Tables */
+.table-container {
+  overflow: visible;
+  border-radius: 20px;
 }
 
-.chat-input input {
-  margin-bottom: 0;
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 1.2rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+td {
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-sent {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.status-failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* Landing Page */
+.landing-page {
+  text-align: center;
+  padding: 8rem 0;
+  background: url('https://grainy-gradients.vercel.app/noise.svg');
+}
+
+.hero-subtitle {
+  max-width: 700px;
+  margin: 2rem auto;
+  font-size: 1.25rem;
+  color: var(--text-dim);
+}
+
+/* Floating Ornaments */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(139, 92, 246, 0.15);
+  top: -100px;
+  right: -100px;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(236, 72, 153, 0.1);
+  bottom: 100px;
+  left: -50px;
 }

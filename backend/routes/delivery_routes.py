@@ -91,3 +91,57 @@ def share_email():
         return success_response({"status": "sent", "message": result}, "Email sent successfully", 200)
     else:
         return error_response(f"Failed to send Email: {result}", 500)
+
+@delivery_bp.route('/share/folder/whatsapp', methods=['POST'])
+@jwt_required()
+def share_folder_whatsapp():
+    """Share an entire folder via WhatsApp"""
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    person_id = data.get('person_id')
+    recipient = data.get('recipient')
+    message = data.get('message', 'Sharing a folder with you from Drishyamitra!')
+    
+    if not person_id or not recipient:
+        return error_response("person_id and recipient are required", 400)
+    
+    success, result = DeliveryService.share_folder_via_whatsapp(
+        user_id=user_id, 
+        person_id=person_id, 
+        recipient=recipient, 
+        message=message
+    )
+    
+    if success:
+        return success_response({"status": "queued", "message": result}, "Folder WhatsApp delivery queued", 200)
+    else:
+        return error_response(f"Failed to queue folder WhatsApp delivery: {result}", 500)
+
+@delivery_bp.route('/share/folder/email', methods=['POST'])
+@jwt_required()
+def share_folder_email():
+    """Share an entire folder via Email"""
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    person_id = data.get('person_id')
+    recipient = data.get('recipient')
+    subject = data.get('subject', 'Folder shared from Drishyamitra')
+    body = data.get('body', 'Here are the photos from my organized folder.')
+    
+    if not person_id or not recipient:
+        return error_response("person_id and recipient are required", 400)
+    
+    success, result = DeliveryService.share_folder_via_email(
+        user_id=user_id, 
+        person_id=person_id, 
+        recipient=recipient, 
+        subject=subject,
+        body=body
+    )
+    
+    if success:
+        return success_response({"status": "sent", "message": result}, "Folder email sent successfully", 200)
+    else:
+        return error_response(f"Failed to send folder email: {result}", 500)

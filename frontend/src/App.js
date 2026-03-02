@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// Components
+import Sidebar from './components/Sidebar';
+import StatsCard from './components/StatsCard';
+import Gallery from './components/Gallery';
+import HistoryTable from './components/HistoryTable';
+import ChatAssistant from './components/ChatAssistant';
+import FolderList from './components/FolderList';
+import FolderDetails from './components/FolderDetails';
+
 let API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 if (!API_BASE.endsWith('/api')) {
   API_BASE = `${API_BASE}/api`;
@@ -17,31 +26,34 @@ function App() {
   };
 
   const initialToken = getCookie('token');
-  const [view, setView] = useState(initialToken ? 'dashboard' : 'landing'); // landing, auth, dashboard, chat
-  const [user, setUser] = useState(null);
+  const [view, setView] = useState(initialToken ? 'dashboard' : 'landing');
+  const [dashboardView, setDashboardView] = useState('gallery');
   const [token, setToken] = useState(initialToken);
   const [photos, setPhotos] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [folderPhotos, setFolderPhotos] = useState([]);
   const [stats, setStats] = useState({ photo_count: 0, person_count: 0, history_count: 0 });
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState([{ role: 'bot', content: 'Hello! How can I help you manage your photos today?' }]);
+  const [messages, setMessages] = useState([{ role: 'bot', content: 'Hello! I am Drishyamitra AI. How can I help you manage your photos today?' }]);
   const [chatInput, setChatInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [dashboardView, setDashboardView] = useState('gallery'); // gallery, history
   const [historyData, setHistoryData] = useState([]);
-  const [organizing, setOrganizing] = useState(false);
   const [waStatus, setWaStatus] = useState({ ready: false, status: 'Checking...' });
   const [waQr, setWaQr] = useState(null);
-
+  const [organizing, setOrganizing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     if (token) {
-      fetchPhotos();
+      if (dashboardView === 'gallery') fetchPhotos();
+      if (dashboardView === 'folders') fetchFolders();
+      if (dashboardView === 'history') fetchHistory();
       fetchStats();
-      fetchHistory();
     }
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, dashboardView]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,6 +61,7 @@ function App() {
     }, 5000);
     fetchWhatsAppStatus();
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchWhatsAppStatus = async () => {
@@ -67,21 +80,8 @@ function App() {
       }
     } catch (err) {
       setWaStatus({ ready: false, status: 'Offline' });
-      setWaQr(null);
     }
   };
-
-  const handleWaReset = async () => {
-    if (!window.confirm("Are you sure you want to reset the WhatsApp connection? This will clear the current session and require a new QR scan.")) return;
-    try {
-      setWaStatus({ ready: false, status: 'Resetting...' });
-      await fetch(`${WA_BASE}/reset`, { method: 'POST' });
-      alert("Reset requested. Please wait a few seconds for a new QR code.");
-    } catch (err) {
-      alert("Reset failed: " + err.message);
-    }
-  };
-
 
   const fetchPhotos = async () => {
     try {
@@ -91,6 +91,26 @@ function App() {
       const data = await res.json();
       if (data.status === 'success') setPhotos(data.data);
     } catch (err) { console.error("Fetch photos failed", err); }
+  };
+
+  const fetchFolders = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/folders`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.status === 'success') setFolders(data.data);
+    } catch (err) { console.error("Fetch folders failed", err); }
+  };
+
+  const fetchFolderPhotos = async (personId) => {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/folders/${personId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.status === 'success') setFolderPhotos(data.data);
+    } catch (err) { console.error("Fetch folder photos failed", err); }
   };
 
   const fetchStats = async () => {
@@ -113,6 +133,12 @@ function App() {
     } catch (err) { console.error("Fetch history failed", err); }
   };
 
+  const handleLogout = () => {
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    setToken(null);
+    setView('landing');
+  };
+
   const handleOrganize = async () => {
     setOrganizing(true);
     try {
@@ -122,413 +148,322 @@ function App() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-        alert("Folder organization has been queued in the background!");
-      } else {
-        alert(data.message || "Organization failed");
+        alert("Magic organization in progress! I'm grouping your photos by person.");
+        setTimeout(fetchFolders, 3000);
       }
+      else alert(data.message || "Organization failed");
     } catch (err) {
-      console.error("Organize error:", err);
       alert("Connection error during folder organization.");
     } finally {
       setOrganizing(false);
     }
   };
 
+  const handleFolderClick = (folder) => {
+    setSelectedFolder(folder);
+    setDashboardView('folder-details');
+    fetchFolderPhotos(folder.id);
+  };
+
+  const handleRenameFolder = async (personId, newName) => {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/folders/${personId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newName })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setFolders(prev => prev.map(f => f.id === personId ? { ...f, name: newName } : f));
+        if (selectedFolder?.id === personId) {
+          setSelectedFolder(prev => ({ ...prev, name: newName }));
+        }
+        fetchHistory();
+      } else alert(data.message || "Rename failed");
+    } catch (err) { alert("Network error"); }
+  };
+
   const handleWhatsAppShare = async (photoId) => {
-    const recipient = prompt("Enter recipient phone number (with country code, e.g., 919876543210):");
+    const recipient = prompt("Enter phone number (with country code):");
     if (!recipient) return;
-    const message = prompt("Enter caption:", "Here is your photo from Drishyamitra!");
+    const message = prompt("Optional message:", "Here is your photo from Drishyamitra!");
     if (message === null) return;
 
     try {
       const res = await fetch(`${API_BASE}/delivery/share/whatsapp`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo_id: photoId, recipient, message })
       });
       const data = await res.json();
       if (data.status === 'success') {
-        alert("WhatsApp message queued successfully!");
+        alert("Enqueued for WhatsApp delivery!");
         fetchHistory();
-      } else {
-        alert(data.message || "Sharing failed");
-      }
-    } catch (err) {
-      console.error("WhatsApp share error:", err);
-      alert("Connection error during WhatsApp sharing.");
-    }
+      } else alert(data.message || "Sharing failed");
+    } catch (err) { alert("Network error."); }
   };
 
   const handleEmailShare = async (photoId) => {
-    const recipient = prompt("Enter recipient email address:");
+    const recipient = prompt("Enter recipient email:");
     if (!recipient) return;
-    const body = prompt("Enter custom message:", "Here is your photo from Drishyamitra!");
+    const body = prompt("Personal message:", "Sent via Drishyamitra AI.");
     if (body === null) return;
 
     try {
       const res = await fetch(`${API_BASE}/delivery/share/email`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo_id: photoId, recipient, body })
       });
       const data = await res.json();
       if (data.status === 'success') {
-        alert("Email sent successfully!");
+        alert("Email dispatched successfully!");
         fetchHistory();
-      } else {
-        alert(data.message || "Email sharing failed");
-      }
-    } catch (err) {
-      console.error("Email share error:", err);
-      alert("Connection error during Email sharing.");
-    }
+      } else alert(data.message || "Email failed");
+    } catch (err) { alert("Network error."); }
+  };
+
+  const handleFolderWhatsAppShare = async (personId) => {
+    const recipient = prompt("Enter phone number for Folder share (all photos):");
+    if (!recipient) return;
+    const message = prompt("Message for the folder:", `Check out these photos of ${selectedFolder?.name}!`);
+    if (message === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/delivery/share/folder/whatsapp`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ person_id: personId, recipient, message })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert("Bulk WhatsApp delivery queued!");
+        fetchHistory();
+      } else alert(data.message || "Folder sharing failed");
+    } catch (err) { alert("Network error."); }
+  };
+
+  const handleFolderEmailShare = async (personId) => {
+    const recipient = prompt("Enter email for Folder share:");
+    if (!recipient) return;
+    const body = prompt("Message for the folder:", "Organized photos sent via Drishyamitra.");
+    if (body === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/delivery/share/folder/email`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ person_id: personId, recipient, body })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert("Folder emailed successfully!");
+        fetchHistory();
+      } else alert(data.message || "Folder email failed");
+    } catch (err) { alert("Network error."); }
   };
 
   const handleUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     setUploading(true);
     const formData = new FormData();
-    const isMultiple = files.length > 1;
-
+    const isBulk = files.length > 1;
     for (let i = 0; i < files.length; i++) {
-      if (isMultiple) {
-        formData.append('photos', files[i]);
-      } else {
-        formData.append('photo', files[i]);
-      }
+      formData.append(isBulk ? 'photos' : 'photo', files[i]);
     }
-
     try {
-      const endpoint = isMultiple ? '/photos/bulk_upload' : '/photos/upload';
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}/photos/${isBulk ? 'bulk_upload' : 'upload'}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
-      const data = await res.json();
-      if (data.status === 'success') {
+      if ((await res.json()).status === 'success') {
         fetchPhotos();
         fetchStats();
-      } else {
-        alert(data.message || "Upload failed");
       }
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("Connection error during upload.");
-    } finally {
-      setUploading(false);
-    }
+    } catch (err) { alert("Upload failed"); }
+    finally { setUploading(false); }
   };
 
-  const [authMode, setAuthMode] = useState('login'); // login, signup
-  const [authError, setAuthError] = useState('');
-
-  const handleAuth = async (e) => {
+  const handleAuth = async (e, mode) => {
     e.preventDefault();
     setLoading(true);
-    setAuthError('');
-
     const fields = e.target;
     const username = fields[0].value;
-    const password = authMode === 'login' ? fields[1].value : fields[2].value;
-    const email = authMode === 'signup' ? fields[1].value : '';
-
-    const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
-    const payload = authMode === 'login' ? { username, password } : { username, email, password };
+    const password = mode === 'login' ? fields[1].value : fields[2].value;
+    const payload = mode === 'login' ? { username, password } : { username, password, email: fields[1].value };
 
     try {
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}/auth/${mode === 'login' ? 'login' : 'register'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       const data = await res.json();
-
       if (data.status === 'success') {
-        if (authMode === 'login') {
-          setUser(data.data.user);
+        if (mode === 'login') {
           setToken(data.data.access_token);
           document.cookie = `token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
           setView('dashboard');
-        } else {
-          alert("Registration successful! Please login.");
-          setAuthMode('login');
-        }
-      } else {
-        setAuthError(data.message || `${authMode} failed`);
-      }
-    } catch (err) {
-      console.error(`${authMode} error:`, err);
-      setAuthError(`Connection error: ${err.message}. Is the backend running?`);
-    } finally {
-      setLoading(false);
-    }
+        } else alert("Account created! Please sign in.");
+      } else alert(data.message);
+    } catch (err) { alert("Auth error"); }
+    finally { setLoading(false); }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
-
-    const userMessage = chatInput.trim();
+    const msg = chatInput;
     setChatInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { role: 'user', content: msg }]);
     setChatLoading(true);
-
     try {
-      const history = messages.map(m => ({ role: m.role, content: m.content }));
       const res = await fetch(`${API_BASE}/chat/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ message: userMessage, history })
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: messages })
       });
       const data = await res.json();
-      if (data.status === 'success') {
-        setMessages(prev => [...prev, { role: 'bot', content: data.data.response }]);
-      }
-    } catch (err) {
-      console.error("Chat error:", err);
-    } finally {
-      setChatLoading(false);
-    }
+      if (data.status === 'success') setMessages(prev => [...prev, { role: 'bot', content: data.data.response }]);
+    } catch (err) { console.error(err); }
+    finally { setChatLoading(false); }
   };
 
   return (
     <div className="App">
-      <nav className="navbar animate-fade-in">
-        <div className="logo">Drishyamitra<span>AI</span></div>
-        <div className="nav-links">
-          {token ? (
-            <button className="btn-primary" onClick={() => { document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; setToken(null); setView('landing'); }}>Logout</button>
-          ) : (
-            <button className="btn-primary" onClick={() => setView('auth')}>Login</button>
-          )}
-        </div>
-      </nav>
+      <div className="orb orb-1"></div>
+      <div className="orb orb-2"></div>
 
-      <main className="container">
-        {view === 'landing' && (
-          <section className="hero animate-fade-in">
-            <h1 className="hero-title">Intelligent Photo Management <span>Redefined</span></h1>
-            <p className="hero-subtitle">Organize, recognize, and interact with your memories using cutting-edge AI.</p>
-            <button className="btn-primary btn-large" onClick={() => setView('auth')}>Get Started Free</button>
+      {view === 'landing' && (
+        <div className="main-content" style={{ marginLeft: 0 }}>
+          <section className="landing-page animate-fade-in">
+            <h1 className="sidebar-logo" style={{ fontSize: '3rem', justifyContent: 'center' }}>Drishyamitra<span>AI</span></h1>
+            <h2 className="hero-title" style={{ fontSize: '4.2rem', marginTop: '2rem', lineHeight: '1.2' }}>Your Memories, <br /><span>Perfectly</span> Organized.</h2>
+            <p className="hero-subtitle">Experience the next generation of photo management with facial recognition and instant AI sharing.</p>
+            <button className="btn-primary" style={{ padding: '1.5rem 3rem', fontSize: '1.2rem', borderRadius: '20px' }} onClick={() => setView('auth')}>Enter the Gallery →</button>
           </section>
-        )}
+        </div>
+      )}
 
-        {view === 'auth' && (
-          <div className="auth-card glass-card animate-fade-in">
-            <h2>{authMode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
-            {authError && <div className="error-msg">{authError}</div>}
-            <form onSubmit={handleAuth}>
-              <input type="text" placeholder="Username" required />
-              {authMode === 'signup' && <input type="email" placeholder="Email" required />}
-              <input type="password" placeholder="Password" required />
-              <button className="btn-primary w-full" type="submit" disabled={loading}>
-                {loading ? 'Processing...' : (authMode === 'login' ? 'Sign In' : 'Sign Up')}
+      {view === 'auth' && (
+        <div className="main-content" style={{ marginLeft: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+          <div className="glass-card animate-fade-in" style={{ padding: '4rem', width: '100%', maxWidth: '450px' }}>
+            <h2 style={{ marginBottom: '2.5rem', textAlign: 'center', fontSize: '2rem' }}>Welcome Back</h2>
+            <form onSubmit={(e) => handleAuth(e, 'login')}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Username</label>
+                <input type="text" placeholder="e.g. jdoe" required />
+              </div>
+              <div style={{ marginBottom: '2rem' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-dim)', fontSize: '0.9rem' }}>Password</label>
+                <input type="password" placeholder="••••••••" required />
+              </div>
+              <button className="btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={loading}>
+                {loading ? 'Authenticating...' : 'Secure Sign In'}
               </button>
             </form>
-            <p className="toggle-auth">
-              {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
-              <span onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}>
-                {authMode === 'login' ? 'Sign Up' : 'Sign In'}
-              </span>
-            </p>
           </div>
-        )}
+        </div>
+      )}
 
-        {view === 'dashboard' && (
-          <div className="dashboard animate-fade-in">
-            <div className="stats-row">
-              <div className="glass-card stat-box"><h3> {stats.photo_count} </h3> <p>Photos</p></div>
-              <div className="glass-card stat-box"><h3> {stats.person_count} </h3> <p>Faces Recognized</p></div>
-              <div className="glass-card stat-box"><h3> {stats.history_count} </h3> <p>Events Grouped</p></div>
-            </div>
+      {view === 'dashboard' && (
+        <>
+          <Sidebar currentView={dashboardView} setView={setDashboardView} onLogout={handleLogout} waStatus={waStatus} />
 
-            <div className="glass-card wa-status-box" style={{ padding: '1.5rem', marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: waStatus.ready ? '#2ed573' : '#ff4757' }}></div>
-                <h4 style={{ margin: 0 }}>WhatsApp Service: {waStatus.status || (waStatus.ready ? 'Connected' : 'Disconnected')}</h4>
-              </div>
-
-              {waQr && !waStatus.ready && (
-                <div style={{ marginTop: '1.5rem' }}>
-                  <p>Scan this QR code to connect WhatsApp:</p>
-                  <div className="qr-container" style={{ background: 'white', padding: '1rem', display: 'inline-block', borderRadius: '8px' }}>
-                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(waQr)}`} alt="WhatsApp QR" />
-                  </div>
+          <main className="main-content">
+            <header className="navbar animate-fade-in">
+              <div style={{ display: 'flex', gap: '1.2rem' }}>
+                <button className="btn-primary" onClick={handleOrganize} disabled={organizing} style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', boxShadow: 'none' }}>
+                  {organizing ? 'Organizing...' : '⚡ Organize AI'}
+                </button>
+                <div style={{ position: 'relative' }}>
+                  <button className="btn-primary" disabled={uploading}>
+                    {uploading ? 'Uploading...' : '󰀻 Add Photos'}
+                    <input type="file" multiple onChange={handleUpload} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            </header>
 
-            <div className="dashboard-tabs" style={{ display: 'flex', gap: '1rem', margin: '2rem 0', justifyContent: 'center' }}>
-              <button
-                className={`btn-primary ${dashboardView === 'gallery' ? '' : 'btn-outline'}`}
-                onClick={() => setDashboardView('gallery')}
-                style={dashboardView !== 'gallery' ? { background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)' } : {}}
-              >
-                Gallery
-              </button>
-              <button
-                className={`btn-primary ${dashboardView === 'history' ? '' : 'btn-outline'}`}
-                onClick={() => setDashboardView('history')}
-                style={dashboardView !== 'history' ? { background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)' } : {}}
-              >
-                Delivery History
-              </button>
-            </div>
+            {dashboardView === 'stats' && (
+              <div className="animate-fade-in">
+                <h2 style={{ marginBottom: '2.5rem' }}>System Analytics</h2>
+                <div className="stats-grid">
+                  <StatsCard label="Total Photos" value={`${stats.photo_count}`} />
+                  <StatsCard label="Faces Recognized" value={stats.person_count} />
+                  <StatsCard label="Total Shares" value={stats.history_count} />
+                </div>
+
+                <div className="glass-card" style={{ marginTop: '2rem', padding: '3rem', textAlign: 'center' }}>
+                  <h3 style={{ color: 'var(--text-dim)' }}>Activity trends coming soon...</h3>
+                </div>
+              </div>
+            )}
 
             {dashboardView === 'gallery' && (
-              <div className="gallery-section">
-                <div className="section-header">
-                  <h2>Your Collection</h2>
-                  <div className="action-buttons" style={{ display: 'flex', gap: '1rem' }}>
-                    <button className="btn-primary" onClick={handleOrganize} disabled={organizing}>
-                      {organizing ? 'Organizing...' : 'Organize Folders'}
-                    </button>
-                    <div className="upload-btn-wrapper">
-                      <button className="btn-primary" disabled={uploading}>
-                        {uploading ? 'Uploading...' : 'Upload Photos'}
-                      </button>
-                      <input type="file" onChange={handleUpload} accept="image/*" disabled={uploading} multiple />
-                    </div>
-                  </div>
+              <div className="animate-fade-in">
+                <div className="gallery-controls">
+                  <h2 style={{ fontSize: '2.2rem' }}>Collections</h2>
                 </div>
-                <div className="photo-grid">
-                  {photos.length > 0 ? photos.map(p => (
-                    <div key={p.id} className="photo-card glass-card">
-                      <img
-                        src={`${API_BASE}/dashboard/media/${p.filename}`}
-                        alt={p.filename}
-                        className="photo-img"
-                        onError={(e) => e.target.src = 'https://via.placeholder.com/300x200?text=Photo+Error'}
-                      />
-                      <div className="photo-info">
-                        <p className="photo-name">{p.filename.split('_').slice(2).join('_')}</p>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <small>{new Date(p.upload_date).toLocaleDateString()}</small>
-                          <div style={{ display: 'flex', gap: '4px' }}>
-                            <button
-                              className="btn-primary"
-                              style={{ padding: '4px 8px', fontSize: '0.7rem' }}
-                              onClick={() => handleWhatsAppShare(p.id)}
-                            >
-                              Share 📱
-                            </button>
-                            <button
-                              className="btn-primary"
-                              style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#5865F2' }}
-                              onClick={() => handleEmailShare(p.id)}
-                            >
-                              Share 📧
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="empty-state glass-card">
-                      <p>No photos yet. Start by uploading some!</p>
-                    </div>
-                  )}
-                </div>
+                <Gallery photos={photos} onWhatsAppShare={handleWhatsAppShare} onEmailShare={handleEmailShare} />
               </div>
+            )}
+
+            {dashboardView === 'folders' && (
+              <div className="animate-fade-in">
+                <h2 style={{ marginBottom: '2.5rem', fontSize: '2.2rem' }}>Your Folders</h2>
+                <FolderList folders={folders} onFolderClick={handleFolderClick} />
+              </div>
+            )}
+
+            {dashboardView === 'folder-details' && selectedFolder && (
+              <FolderDetails
+                folder={selectedFolder}
+                photos={folderPhotos}
+                onBack={() => setDashboardView('folders')}
+                onRename={handleRenameFolder}
+                onWhatsAppShare={handleFolderWhatsAppShare}
+                onEmailShare={handleFolderEmailShare}
+                onPhotoWhatsAppShare={handleWhatsAppShare}
+                onPhotoEmailShare={handleEmailShare}
+              />
             )}
 
             {dashboardView === 'history' && (
-              <div className="history-section">
-                <div className="section-header">
-                  <h2>Delivery History</h2>
-                </div>
-                <div className="history-list glass-card" style={{ padding: '2rem' }}>
-                  {historyData && historyData.length > 0 ? (
-                    <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                          <th style={{ padding: '1rem' }}>Date</th>
-                          <th style={{ padding: '1rem' }}>Action</th>
-                          <th style={{ padding: '1rem' }}>Medium</th>
-                          <th style={{ padding: '1rem' }}>Recipient</th>
-                          <th style={{ padding: '1rem' }}>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyData.map(item => (
-                          <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <td style={{ padding: '1rem' }}>{new Date(item.timestamp).toLocaleString()}</td>
-                            <td style={{ padding: '1rem' }}>{item.action.replace(/_/g, ' ')}</td>
-                            <td style={{ padding: '1rem', textTransform: 'capitalize' }}>{item.details.delivery_medium || '-'}</td>
-                            <td style={{ padding: '1rem' }}>{item.details.recipient || '-'}</td>
-                            <td style={{ padding: '1rem' }}>
-                              <span style={{
-                                padding: '0.25rem 0.5rem',
-                                borderRadius: '4px',
-                                fontSize: '0.85rem',
-                                backgroundColor: (item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success')) ? 'rgba(46, 213, 115, 0.2)' :
-                                  (item.details.status === 'failed' || item.action.includes('failed')) ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 165, 2, 0.2)',
-                                color: (item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success')) ? '#2ed573' :
-                                  (item.details.status === 'failed' || item.action.includes('failed')) ? '#ff4757' : '#ffa502'
-                              }}>
-                                {item.details.status === 'delivered' ? 'Success' :
-                                  item.details.status === 'pending_whatsapp' ? 'Pending' :
-                                    (item.details.status || 'Pending')}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="empty-state">
-                      <p>No delivery records found.</p>
-                    </div>
-                  )}
-                </div>
+              <div className="animate-fade-in">
+                <h2 style={{ marginBottom: '2.5rem', fontSize: '2.2rem' }}>Delivery History</h2>
+                <HistoryTable data={historyData} />
               </div>
             )}
 
-          </div>
-        )}
-      </main>
-
-      {token && (
-        <div className={`chat-widget ${chatOpen ? 'open' : ''}`}>
-          <button className="chat-toggle btn-primary" onClick={() => setChatOpen(!chatOpen)}>
-            {chatOpen ? '✕' : '💬 Ask AI'}
-          </button>
-          {chatOpen && (
-            <div className="chat-window glass-card animate-fade-in">
-              <div className="chat-header">Assistant</div>
-              <div className="chat-messages">
-                {messages.map((m, idx) => (
-                  <div key={idx} className={`msg ${m.role}`}>
-                    {m.content}
-                  </div>
-                ))}
-                {chatLoading && <div className="msg bot">...</div>}
+            {waQr && dashboardView === 'gallery' && (
+              <div className="glass-card animate-fade-in" style={{ marginTop: '3rem', padding: '3rem', textAlign: 'center', border: '1px solid var(--warning)' }}>
+                <h3>Link Your Mobile</h3>
+                <p style={{ color: 'var(--text-dim)', margin: '1.5rem 0', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
+                  Scan this secure QR code with WhatsApp to enable instant mobile sharing across all your devices.
+                </p>
+                <div style={{ background: 'white', padding: '1.5rem', display: 'inline-block', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(waQr)}`} alt="QR" style={{ display: 'block' }} />
+                </div>
               </div>
-              <form className="chat-input" onSubmit={handleSendMessage}>
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  disabled={chatLoading}
-                />
-              </form>
-            </div>
-          )}
-        </div>
+            )}
+          </main>
+
+          <ChatAssistant
+            messages={messages}
+            isOpen={chatOpen}
+            onToggle={() => setChatOpen(!chatOpen)}
+            input={chatInput}
+            onInputChange={setChatInput}
+            onSendMessage={handleSendMessage}
+            loading={chatLoading}
+          />
+        </>
       )}
     </div>
   );
