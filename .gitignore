@@ -45,6 +45,7 @@ backend/data/
 !backend/data/.gitkeep
 
 # --- Redis ---
+redis/
 dump.rdb
 temp-*.rdb
 *.rdb
@@ -52,6 +53,7 @@ temp-*.rdb
 # --- WhatsApp Service ---
 whatsapp-service/node_modules/
 whatsapp-service/dist/
+whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_cache/
 whatsapp-service/uploads/
@@ -64,6 +66,13 @@ backend/test_*.py
 backend/*_test.py
 **/*_test.py
 **/test_*.py
+backend/init_db_light.py
+backend/create_test_user.py
+backend/check_db_status.py
+backend/db_check_light.py
+backend/retrigger_faces.py
+backend/retrigger_light.py
+backend/db_diag.py
 
 # --- Environment & Secrets ---
 .env*
