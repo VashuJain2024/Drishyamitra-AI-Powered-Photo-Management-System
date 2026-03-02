@@ -23,7 +23,7 @@ class Config:
         # Extract the path after sqlite:///
         db_path = DATABASE_URL.split('sqlite:///')[1]
         # Convert to absolute path relative to basedir (backend ROOT)
-        abs_db_path = os.path.join(basedir, db_path)
+        abs_db_path = os.path.normpath(os.path.join(basedir, db_path))
         SQLALCHEMY_DATABASE_URI = f'sqlite:///{abs_db_path}'
     else:
         SQLALCHEMY_DATABASE_URI = DATABASE_URL

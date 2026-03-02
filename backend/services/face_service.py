@@ -102,19 +102,10 @@ class FaceService:
 
     @staticmethod
     def process_photo_async(app, photo_id: int, image_path: str, user_id: int) -> None:
-        """Spawn a daemon thread to run face processing without blocking the request."""
-        def _background():
-            with app.app_context():
-                try:
-                    FaceService.detect_and_store_faces(photo_id, image_path, user_id)
-                except Exception as exc:
-                    app.logger.error(
-                        f"Background face processing failed for photo {photo_id}: {exc}"
-                    )
-
-        t = threading.Thread(target=_background, daemon=True)
-        t.start()
-        logger.info(f"Background thread started for photo {photo_id}")
+        """Trigger Celery task for face processing."""
+        from services.tasks import process_photo_faces
+        process_photo_faces.delay(photo_id)
+        logger.info(f"Celery task queued for photo {photo_id}")
 
     @staticmethod
     def get_faces_for_photo(photo_id: int) -> list:

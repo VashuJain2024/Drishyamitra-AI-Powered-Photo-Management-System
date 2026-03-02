@@ -61,17 +61,21 @@ def process_photo_faces(self, photo_id: int):
                 logger.error(f"process_photo_faces: Image missing at {abs_path}")
                 return {"status": "error", "message": "Image file missing"}
 
+            logger.info(f"Starting face recognition pipeline for photo {photo_id} at {abs_path}")
             service = FaceRecognitionService()
 
             # ---- Stage 1: Detection + Facenet512 embeddings ----
+            logger.info("Stage 1: Detecting and extracting faces...")
             faces_data = service.detect_and_extract_faces(abs_path)
             if not faces_data:
                 logger.info(f"No faces found in photo {photo_id}")
                 return {"status": "success", "message": "No faces detected", "count": 0}
 
+            logger.info(f"Detected {len(faces_data)} faces. Stage 2: Extracting landmarks...")
             # ---- Stage 2: MTCNN landmarks (best-effort) ----
             landmark_items = service.extract_faces_with_landmarks(abs_path)
             landmark_map = {i: item.get("landmarks", {}) for i, item in enumerate(landmark_items)}
+            logger.info(f"Landmarks extracted for {len(landmark_map)} faces. Stage 3: Matching faces...")
 
             matched_names  = []
             faces_stored   = 0
@@ -211,7 +215,7 @@ def send_whatsapp_photo_task(self, log_id: int, user_id: int, photo_id: int, rec
                 caption=message
             )
             
-            details = log_record.details or {}
+            details = dict(log_record.details or {})
             
             if success:
                 details['status'] = 'delivered'
@@ -223,6 +227,7 @@ def send_whatsapp_photo_task(self, log_id: int, user_id: int, photo_id: int, rec
                 return {"status": "success", "response": response}
             else:
                 error_info = response.get('error', 'Unknown Error')
+                details = dict(log_record.details or {})
                 details['status'] = 'failed'
                 details['error'] = error_info
                 log_record.action = 'whatsapp_share_failed'

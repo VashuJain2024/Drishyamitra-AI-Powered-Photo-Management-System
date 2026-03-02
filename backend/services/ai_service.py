@@ -13,21 +13,41 @@ class AIService:
         self.model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
         self.system_prompt = """
-You are Drishyamitra, an intelligent AI assistant for photo management and delivery tracking.
-Your goal is to help users manage their photos, identify persons, and view delivery history.
+You are Drishyamitra, an intelligent AI assistant for photo management.
+Your goal is to help users manage their photos and share them.
 
-Available tools (intents):
-1. get_deliveries
-2. find_photos
-3. list_persons
-4. get_stats
-5. share_photo
+### INTENT TRIGGERING RULES:
+1. If the user wants to perform an action (share, find, list, stats), you MUST respond with a JSON object ONLY.
+2. Format: {"intent": "intent_name", "params": {"key": "value"}}
+3. Do NOT include any conversational text before or after the JSON.
 
-Instructions:
-- If the user's request matches one of these intents, respond in JSON format ONLY:
-  {"intent": "intent_name", "params": {...}}
-- Otherwise respond conversationally.
-- Be friendly, concise, and professional.
+### AVAILABLE INTENTS:
+- get_deliveries: params={"days": int}
+- find_photos: params={"name": str}
+- list_persons: params={}
+- get_stats: params={}
+- share_photo: params={"photo_id": int, "recipient": str, "body": str}
+
+### FEW-SHOT EXAMPLES:
+User: "show my recent deliveries"
+Assistant: {"intent": "get_deliveries", "params": {"days": 7}}
+
+User: "find photos of Rahul"
+Assistant: {"intent": "find_photos", "params": {"name": "Rahul"}}
+
+User: "share photo 5 with test@gmail.com"
+Assistant: {"intent": "share_photo", "params": {"photo_id": 5, "recipient": "test@gmail.com"}}
+
+User: "email photo 2 to rahul@gmail.com with the message 'Happy Birthday!'"
+Assistant: {"intent": "share_photo", "params": {"photo_id": 2, "recipient": "rahul@gmail.com", "body": "Happy Birthday!"}}
+
+User: "hello"
+Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help you today?"
+
+### CONVERSATIONAL RULES:
+- Use conversation ONLY if no intent matches or if information is missing.
+- If missing photo_id for sharing, ask: "Which photo ID would you like to share?"
+- NEVER mention "JSON" or "intents" to the user.
 """
 
     def _generate_final_response(self, user_query, action_result):
@@ -110,27 +130,26 @@ Instructions:
             ai_content = completion.choices[0].message.content or ""
             ai_content = ai_content.strip()
 
-            # Attempt intent parsing
+            # Attempt robust intent parsing using regex
             try:
-                cleaned = ai_content
+                import re
+                # Find something that looks like a JSON object
+                json_match = re.search(r'\{.*"intent".*\}', ai_content, re.DOTALL)
+                
+                if json_match:
+                    cleaned = json_match.group(0)
+                    intent_data = json.loads(cleaned)
 
-                if "```json" in cleaned:
-                    cleaned = cleaned.split("```json")[1].split("```")[0].strip()
-                elif "```" in cleaned:
-                    cleaned = cleaned.split("```")[1].strip()
+                    if isinstance(intent_data, dict) and "intent" in intent_data:
+                        intent_name = intent_data.get("intent")
+                        params = intent_data.get("params", {})
+                        params["user_id"] = user_id
 
-                intent_data = json.loads(cleaned)
-
-                if isinstance(intent_data, dict) and "intent" in intent_data:
-                    intent_name = intent_data.get("intent")
-                    params = intent_data.get("params", {})
-                    params["user_id"] = user_id
-
-                    if intent_name in ACTION_MAP:
-                        result = ACTION_MAP[intent_name](params)
-                        return self._generate_final_response(message, result)
-
-            except (json.JSONDecodeError, ValueError):
+                        if intent_name in ACTION_MAP:
+                            result = ACTION_MAP[intent_name](params)
+                            return self._generate_final_response(message, result)
+            except Exception as e:
+                logger.warning(f"Intent parsing failed: {e}")
                 pass
 
             return ai_content

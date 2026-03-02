@@ -10,7 +10,7 @@ class ChatLog(db.Model):
     response = db.Column(db.Text)
     is_fallback = db.Column(db.Boolean, default=False)
     metadata_json = db.Column(db.JSON) # Additional context or extracted params
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=datetime.now, index=True)
     
     def to_dict(self):
         return {

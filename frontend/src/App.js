@@ -6,6 +6,8 @@ if (!API_BASE.endsWith('/api')) {
   API_BASE = `${API_BASE}/api`;
 }
 
+const WA_BASE = 'http://localhost:3001';
+
 function App() {
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
@@ -29,6 +31,8 @@ function App() {
   const [dashboardView, setDashboardView] = useState('gallery'); // gallery, history
   const [historyData, setHistoryData] = useState([]);
   const [organizing, setOrganizing] = useState(false);
+  const [waStatus, setWaStatus] = useState({ ready: false, status: 'Checking...' });
+  const [waQr, setWaQr] = useState(null);
 
 
   useEffect(() => {
@@ -38,6 +42,45 @@ function App() {
       fetchHistory();
     }
   }, [token]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchWhatsAppStatus();
+    }, 5000);
+    fetchWhatsAppStatus();
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchWhatsAppStatus = async () => {
+    try {
+      const res = await fetch(`${WA_BASE}/status`);
+      const data = await res.json();
+      setWaStatus({ ready: data.ready, status: data.status });
+
+      if (!data.ready) {
+        const qrRes = await fetch(`${WA_BASE}/qr`);
+        const qrData = await qrRes.json();
+        if (qrData.success) setWaQr(qrData.qr);
+        else setWaQr(null);
+      } else {
+        setWaQr(null);
+      }
+    } catch (err) {
+      setWaStatus({ ready: false, status: 'Offline' });
+      setWaQr(null);
+    }
+  };
+
+  const handleWaReset = async () => {
+    if (!window.confirm("Are you sure you want to reset the WhatsApp connection? This will clear the current session and require a new QR scan.")) return;
+    try {
+      setWaStatus({ ready: false, status: 'Resetting...' });
+      await fetch(`${WA_BASE}/reset`, { method: 'POST' });
+      alert("Reset requested. Please wait a few seconds for a new QR code.");
+    } catch (err) {
+      alert("Reset failed: " + err.message);
+    }
+  };
 
 
   const fetchPhotos = async () => {
@@ -91,6 +134,61 @@ function App() {
     }
   };
 
+  const handleWhatsAppShare = async (photoId) => {
+    const recipient = prompt("Enter recipient phone number (with country code, e.g., 919876543210):");
+    if (!recipient) return;
+    const message = prompt("Enter caption:", "Here is your photo from Drishyamitra!");
+    if (message === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/delivery/share/whatsapp`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ photo_id: photoId, recipient, message })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert("WhatsApp message queued successfully!");
+        fetchHistory();
+      } else {
+        alert(data.message || "Sharing failed");
+      }
+    } catch (err) {
+      console.error("WhatsApp share error:", err);
+      alert("Connection error during WhatsApp sharing.");
+    }
+  };
+
+  const handleEmailShare = async (photoId) => {
+    const recipient = prompt("Enter recipient email address:");
+    if (!recipient) return;
+    const body = prompt("Enter custom message:", "Here is your photo from Drishyamitra!");
+    if (body === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/delivery/share/email`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ photo_id: photoId, recipient, body })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert("Email sent successfully!");
+        fetchHistory();
+      } else {
+        alert(data.message || "Email sharing failed");
+      }
+    } catch (err) {
+      console.error("Email share error:", err);
+      alert("Connection error during Email sharing.");
+    }
+  };
 
   const handleUpload = async (e) => {
     const files = e.target.files;
@@ -257,6 +355,22 @@ function App() {
               <div className="glass-card stat-box"><h3> {stats.history_count} </h3> <p>Events Grouped</p></div>
             </div>
 
+            <div className="glass-card wa-status-box" style={{ padding: '1.5rem', marginBottom: '2rem', textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: waStatus.ready ? '#2ed573' : '#ff4757' }}></div>
+                <h4 style={{ margin: 0 }}>WhatsApp Service: {waStatus.status || (waStatus.ready ? 'Connected' : 'Disconnected')}</h4>
+              </div>
+
+              {waQr && !waStatus.ready && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <p>Scan this QR code to connect WhatsApp:</p>
+                  <div className="qr-container" style={{ background: 'white', padding: '1rem', display: 'inline-block', borderRadius: '8px' }}>
+                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(waQr)}`} alt="WhatsApp QR" />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="dashboard-tabs" style={{ display: 'flex', gap: '1rem', margin: '2rem 0', justifyContent: 'center' }}>
               <button
                 className={`btn-primary ${dashboardView === 'gallery' ? '' : 'btn-outline'}`}
@@ -301,7 +415,25 @@ function App() {
                       />
                       <div className="photo-info">
                         <p className="photo-name">{p.filename.split('_').slice(2).join('_')}</p>
-                        <small>{new Date(p.upload_date).toLocaleDateString()}</small>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <small>{new Date(p.upload_date).toLocaleDateString()}</small>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              className="btn-primary"
+                              style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                              onClick={() => handleWhatsAppShare(p.id)}
+                            >
+                              Share 📱
+                            </button>
+                            <button
+                              className="btn-primary"
+                              style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#5865F2' }}
+                              onClick={() => handleEmailShare(p.id)}
+                            >
+                              Share 📧
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )) : (
@@ -342,12 +474,14 @@ function App() {
                                 padding: '0.25rem 0.5rem',
                                 borderRadius: '4px',
                                 fontSize: '0.85rem',
-                                backgroundColor: item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success') ? 'rgba(46, 213, 115, 0.2)' :
-                                  item.details.status === 'failed' || item.action.includes('failed') ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 165, 2, 0.2)',
-                                color: item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success') ? '#2ed573' :
-                                  item.details.status === 'failed' || item.action.includes('failed') ? '#ff4757' : '#ffa502'
+                                backgroundColor: (item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success')) ? 'rgba(46, 213, 115, 0.2)' :
+                                  (item.details.status === 'failed' || item.action.includes('failed')) ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 165, 2, 0.2)',
+                                color: (item.details.status === 'delivered' || item.details.status === 'sent' || item.action.includes('success')) ? '#2ed573' :
+                                  (item.details.status === 'failed' || item.action.includes('failed')) ? '#ff4757' : '#ffa502'
                               }}>
-                                {item.details.status || 'pending'}
+                                {item.details.status === 'delivered' ? 'Success' :
+                                  item.details.status === 'pending_whatsapp' ? 'Pending' :
+                                    (item.details.status || 'Pending')}
                               </span>
                             </td>
                           </tr>

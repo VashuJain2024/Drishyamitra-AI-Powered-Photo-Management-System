@@ -8,7 +8,7 @@ class DeliveryHistory(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     action = db.Column(db.String(128), nullable=False) # e.g., 'recognition_triggered', 'photo_shared'
     details = db.Column(db.JSON)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=datetime.now, index=True)
     
     def to_dict(self):
         return {

@@ -61,9 +61,18 @@ class WhatsAppService:
                 
             chat_id = self._format_number(recipient_number)
             
-            # Use multi-part form data to upload the file to the WhatsApp API
+            import mimetypes
+            
+            # Detect MIME type from file extension
+            mime_type, _ = mimetypes.guess_type(media_path)
+            if not mime_type:
+                mime_type = 'image/jpeg' # Default fallback
+                
+            file_name = os.path.basename(media_path)
+            
+            # Use multi-part form data to upload the file with explicit type and name
             with open(media_path, 'rb') as f:
-                files = {'file': f}
+                files = {'file': (file_name, f, mime_type)}
                 data = {'number': chat_id, 'caption': caption}
                 
                 response = requests.post(
