@@ -19,10 +19,6 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Service class
-# ---------------------------------------------------------------------------
-
 class FaceRecognitionService:
     """
     Unified face detection and recognition service.
@@ -33,30 +29,25 @@ class FaceRecognitionService:
     Matching   : cosine similarity (default) or Euclidean distance
     """
 
-    # DeepFace model / detector identifiers
     MODEL_NAME        = "Facenet512"
-    DETECTOR_BACKEND  = "retinaface"   # detection pass
-    ALIGN_BACKEND     = "mtcnn"        # landmark / alignment pass
+    DETECTOR_BACKEND  = "retinaface"   
+    ALIGN_BACKEND     = "mtcnn"        
     MODEL_VERSION     = "Facenet512-RetinaFace-MTCNN-v1"
 
-    # Matching thresholds
-    COSINE_THRESHOLD    = 0.40   # cosine distance (lower = more similar)
-    EUCLIDEAN_THRESHOLD = 20.0   # L2 distance
+    COSINE_THRESHOLD    = 0.40   
+    EUCLIDEAN_THRESHOLD = 20.0   
 
-    # Embedding cache TTL (seconds)
-    CACHE_TTL = 300  # 5 minutes
+    CACHE_TTL = 300  
 
     def __init__(self):
         self.embeddings_folder = Config.EMBEDDINGS_FOLDER
         self.metric = "cosine"
 
-        # Instance aliases (for backward-compat with test scripts and logging)
         self.model_name       = self.MODEL_NAME
         self.detector_backend = self.DETECTOR_BACKEND
         self.align_backend    = self.ALIGN_BACKEND
         self.distance_threshold = self.COSINE_THRESHOLD
 
-        # in-process embedding cache: { user_id: [{"person": <Person>, "embedding": [...]}] }
         self._emb_cache: dict = {}
         self._cache_ts: dict = {}
 
@@ -65,18 +56,14 @@ class FaceRecognitionService:
             f"detector={self.DETECTOR_BACKEND} align={self.ALIGN_BACKEND}"
         )
 
-    # ------------------------------------------------------------------
-    # Cache helpers
-    # ------------------------------------------------------------------
-
     def _get_user_embeddings(self, user_id: int) -> list:
         """Return user embeddings from DB (cache disabled for real-time sync)."""
         from sqlalchemy.orm import joinedload
-        
+
         logger.debug(f"Querying latest embeddings for user {user_id}")
-        # Use joinedload to fetch faces in the same query to avoid N+1 issues
+
         persons = Person.query.options(joinedload(Person.faces)).filter_by(user_id=user_id).all()
-        
+
         data = []
         for person in persons:
             for face in person.faces:
@@ -92,10 +79,6 @@ class FaceRecognitionService:
         self._cache_ts.pop(user_id, None)
         logger.debug(f"Cache invalidated for user {user_id}")
 
-    # ------------------------------------------------------------------
-    # Stage 1 — Face detection + MTCNN landmark extraction
-    # ------------------------------------------------------------------
-
     def extract_faces_with_landmarks(self, image_path: str) -> list:
         """
         Use RetinaFace for detection and MTCNN for landmark extraction.
@@ -109,12 +92,11 @@ class FaceRecognitionService:
         t0 = time.time()
         results = []
 
-        # ---- Pass 1: RetinaFace detection (bounding boxes + confidence) ----
         try:
             detected = DeepFace.extract_faces(
                 img_path=image_path,
                 detector_backend=self.DETECTOR_BACKEND,
-                align=False,          # no alignment yet — raw crop
+                align=False,          
                 enforce_detection=False,
             )
         except Exception as exc:
@@ -127,11 +109,10 @@ class FaceRecognitionService:
 
         logger.info(f"RetinaFace found {len(detected)} face(s) in {os.path.basename(image_path)}")
 
-        # ---- Pass 2: MTCNN alignment + landmark extraction ----
         try:
             aligned = DeepFace.extract_faces(
                 img_path=image_path,
-                detector_backend=self.ALIGN_BACKEND,   # MTCNN
+                detector_backend=self.ALIGN_BACKEND,   
                 align=True,
                 enforce_detection=False,
             )
@@ -140,18 +121,17 @@ class FaceRecognitionService:
                 f"MTCNN alignment failed for {image_path}: {exc}. "
                 "Falling back to RetinaFace crops without alignment."
             )
-            aligned = detected  # fallback — use raw RetinaFace crops
+            aligned = detected  
 
-        # Merge: prefer aligned crops when MTCNN count matches, else use RetinaFace
         face_list = aligned if len(aligned) == len(detected) else detected
 
         for item in face_list:
             landmark_data = item.get("facial_area", {})
             results.append({
-                "face":         item.get("face"),          # cropped ndarray
+                "face":         item.get("face"),          
                 "facial_area":  item.get("facial_area", {}),
                 "confidence":   item.get("confidence", 0.0),
-                "landmarks":    item.get("landmarks", {}), # MTCNN landmark points
+                "landmarks":    item.get("landmarks", {}), 
             })
 
         elapsed = time.time() - t0
@@ -160,10 +140,6 @@ class FaceRecognitionService:
             f"({len(results)} face(s)) for {os.path.basename(image_path)}"
         )
         return results
-
-    # ------------------------------------------------------------------
-    # Stage 2 — Embedding extraction (Facenet512)
-    # ------------------------------------------------------------------
 
     def get_embedding(self, image_path: str, face_crop=None) -> list | None:
         """
@@ -192,10 +168,6 @@ class FaceRecognitionService:
             logger.error(f"Embedding extraction failed: {exc}")
             return None
 
-    # ------------------------------------------------------------------
-    # Combined pipeline: detect + align + embed
-    # ------------------------------------------------------------------
-
     def detect_and_extract_faces(self, image_path: str) -> list:
         """
         Full pipeline for a single image.
@@ -221,17 +193,13 @@ class FaceRecognitionService:
                 f"detect_and_extract_faces: {len(raw)} face(s) found in "
                 f"{os.path.basename(image_path)} ({elapsed:.2f}s)"
             )
-            # Normalise structure — ensure face_confidence exists
+
             for item in raw:
                 item.setdefault("face_confidence", item.get("confidence", 0.0))
             return raw
         except Exception as exc:
             logger.error(f"Pipeline failed for {image_path}: {exc}")
             return []
-
-    # ------------------------------------------------------------------
-    # Batch processing
-    # ------------------------------------------------------------------
 
     def process_batch(self, image_paths: list, max_workers: int = 4) -> list:
         """
@@ -256,10 +224,6 @@ class FaceRecognitionService:
         logger.info(f"Batch complete — processed {len(results)} image(s)")
         return results
 
-    # ------------------------------------------------------------------
-    # Distance helpers
-    # ------------------------------------------------------------------
-
     @staticmethod
     def cosine_similarity(a: list, b: list) -> float:
         """Cosine similarity in [−1, 1]. Higher = more similar."""
@@ -279,10 +243,6 @@ class FaceRecognitionService:
         """L2 distance. Lower = more similar."""
         return float(np.linalg.norm(np.array(a, dtype=np.float32) - np.array(b, dtype=np.float32)))
 
-    # ------------------------------------------------------------------
-    # Matching
-    # ------------------------------------------------------------------
-
     def match_face(self, target_embedding: list, user_id: int) -> tuple:
         """
         Match target_embedding against all known faces for user_id.
@@ -301,9 +261,8 @@ class FaceRecognitionService:
             stored = entry["embedding"]
             cos_d  = self.cosine_distance(target_embedding, stored)
             euclid = self.euclidean_distance(target_embedding, stored)
-            sim    = 1.0 - cos_d  # higher is better
+            sim    = 1.0 - cos_d  
 
-            # Primary criterion: cosine distance below threshold
             if cos_d < self.COSINE_THRESHOLD and cos_d < best_cos_dist:
                 best_cos_dist = cos_d
                 best_euclid   = euclid
@@ -325,10 +284,6 @@ class FaceRecognitionService:
 
         return best_person, score
 
-    # ------------------------------------------------------------------
-    # Auto-create unknown person
-    # ------------------------------------------------------------------
-
     def auto_create_person(self, user_id: int, label: str = None) -> "Person":
         """
         Create a new Person record for an unrecognised face.
@@ -342,7 +297,7 @@ class FaceRecognitionService:
 
         person = Person(name=label, user_id=user_id, is_auto_created=True)
         db.session.add(person)
-        db.session.flush()   # get person.id without full commit
+        db.session.flush()   
         self.invalidate_cache(user_id)
         logger.info(f"Auto-created person '{label}' (id={person.id}) for user {user_id}")
         return person

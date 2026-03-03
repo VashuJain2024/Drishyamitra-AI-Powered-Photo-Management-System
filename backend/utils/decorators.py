@@ -13,17 +13,17 @@ def validate_json(*fields):
         def decorated_function(*args, **kwargs):
             if not request.is_json:
                 return validation_error("Request body must be JSON")
-            
+
             try:
                 data = request.get_json()
             except Exception:
                 return validation_error("Invalid JSON format")
-                
+
             missing = [field for field in fields if field not in data]
-            
+
             if missing:
                 return validation_error(f"Missing required fields: {', '.join(missing)}")
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -54,25 +54,24 @@ def log_request(f):
         path = request.path
         method = request.method
         current_app.logger.info(f">>> Starting {method} {path}")
-        
+
         try:
             response = f(*args, **kwargs)
             duration = time.time() - start_time
-            
-            # Extract status code from response if it's a tuple or Response object
+
             status_code = 200
             if isinstance(response, tuple):
                 status_code = response[1]
             elif hasattr(response, 'status_code'):
                 status_code = response.status_code
-            
+
             current_app.logger.info(f"<<< Finished {method} {path} | Status: {status_code} | Duration: {duration:.4f}s")
             return response
-            
+
         except Exception as e:
             duration = time.time() - start_time
             error_msg = f"!!! Error in {method} {path}: {str(e)}\n{traceback.format_exc()}"
             current_app.logger.error(error_msg)
             return error_response("An internal server error occurred", 500)
-            
+
     return decorated_function

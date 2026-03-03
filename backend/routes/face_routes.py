@@ -25,11 +25,6 @@ face_bp = Blueprint("face", __name__)
 
 ALLOWED_SEARCH_EXTENSIONS = {"png", "jpg", "jpeg"}
 
-
-# ---------------------------------------------------------------------------
-# Detection
-# ---------------------------------------------------------------------------
-
 @face_bp.route("/detect/<int:photo_id>", methods=["POST"])
 @jwt_required()
 @log_request
@@ -57,7 +52,6 @@ def detect_faces(photo_id):
         logger.error(f"detect_faces error: {exc}")
         return error_response(f"Failed to start face detection: {str(exc)}", 500)
 
-
 @face_bp.route("/photo/<int:photo_id>", methods=["GET"])
 @jwt_required()
 def get_photo_faces(photo_id):
@@ -70,11 +64,6 @@ def get_photo_faces(photo_id):
     faces = FaceService.get_faces_for_photo(photo_id)
     return success_response([f.to_dict() for f in faces])
 
-
-# ---------------------------------------------------------------------------
-# Person management
-# ---------------------------------------------------------------------------
-
 @face_bp.route("/persons", methods=["GET"])
 @jwt_required()
 def list_persons():
@@ -82,7 +71,6 @@ def list_persons():
     user_id = get_jwt_identity()
     persons = Person.query.filter_by(user_id=user_id).order_by(Person.created_at.desc()).all()
     return success_response([p.to_dict() for p in persons])
-
 
 @face_bp.route("/persons", methods=["POST"])
 @jwt_required()
@@ -99,7 +87,6 @@ def create_person():
     db.session.add(person)
     db.session.commit()
     return success_response(person.to_dict(), "Person created", 201)
-
 
 @face_bp.route("/persons/<int:person_id>", methods=["PUT"])
 @jwt_required()
@@ -120,10 +107,8 @@ def update_person(person_id):
 
     db.session.commit()
 
-    # Invalidate cache so renamed person appears in future matches
     FaceRecognitionService().invalidate_cache(user_id)
     return success_response(person.to_dict(), "Person updated")
-
 
 @face_bp.route("/persons/<int:person_id>", methods=["DELETE"])
 @jwt_required()
@@ -140,11 +125,6 @@ def delete_person(person_id):
     db.session.commit()
     FaceRecognitionService().invalidate_cache(user_id)
     return success_response({"deleted": True, "name": name}, f"Person '{name}' deleted")
-
-
-# ---------------------------------------------------------------------------
-# Face-based photo search
-# ---------------------------------------------------------------------------
 
 @face_bp.route("/search", methods=["POST"])
 @jwt_required()
@@ -165,7 +145,6 @@ def search_by_face():
     if ext not in ALLOWED_SEARCH_EXTENSIONS:
         return error_response(f"Unsupported file type '.{ext}'", 415)
 
-    # Save temp query image
     temp_dir  = os.path.join(current_app.config["UPLOAD_FOLDER"], "_search_tmp")
     os.makedirs(temp_dir, exist_ok=True)
     temp_path = os.path.join(temp_dir, secure_filename(file.filename))
@@ -178,12 +157,10 @@ def search_by_face():
         if not faces_data:
             return success_response([], "No face detected in query image")
 
-        # Use the first detected face as the query
         query_emb   = faces_data[0].get("embedding")
         if not query_emb:
             return error_response("Could not extract embedding from query image", 422)
 
-        # Find matching persons across the user's profile
         matched_person, scores = service.match_face(query_emb, user_id)
 
         if not matched_person:
@@ -192,7 +169,6 @@ def search_by_face():
                 f"No matching person found (best cosine distance: {scores['cosine_distance']:.4f})",
             )
 
-        # Collect all photos containing a face linked to this person
         matched_faces = Face.query.filter_by(person_id=matched_person.id).all()
         photo_ids     = list({f.photo_id for f in matched_faces})
         photos        = Photo.query.filter(Photo.id.in_(photo_ids), Photo.user_id == user_id).all()
@@ -208,14 +184,9 @@ def search_by_face():
         )
 
     finally:
-        # Clean up temp file
+
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
-
-# ---------------------------------------------------------------------------
-# Recognition stats
-# ---------------------------------------------------------------------------
 
 @face_bp.route("/stats", methods=["GET"])
 @jwt_required()

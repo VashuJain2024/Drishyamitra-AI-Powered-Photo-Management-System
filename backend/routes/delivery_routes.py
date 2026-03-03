@@ -17,7 +17,7 @@ def log_activity():
     data = request.get_json()
     action = data.get('action')
     details = data.get('details', {})
-    
+
     try:
         new_entry = DeliveryHistory(
             user_id=user_id,
@@ -26,7 +26,7 @@ def log_activity():
         )
         db.session.add(new_entry)
         db.session.commit()
-        
+
         return success_response(new_entry.to_dict(), "Activity logged successfully", 201)
     except Exception as e:
         db.session.rollback()
@@ -44,21 +44,21 @@ def share_whatsapp():
     """Share a photo via WhatsApp"""
     user_id = get_jwt_identity()
     data = request.get_json()
-    
+
     photo_id = data.get('photo_id')
     recipient = data.get('recipient')
     message = data.get('message', 'Here is your photo from Drishyamitra!')
-    
+
     if not photo_id or not recipient:
         return error_response("photo_id and recipient are required", 400)
-    
+
     success, result = DeliveryService.share_photo_via_whatsapp(
         user_id=user_id, 
         photo_id=photo_id, 
         recipient=recipient, 
         message=message
     )
-    
+
     if success:
         return success_response({"status": "queued", "message": result}, "WhatsApp delivery queued successfully", 200)
     else:
@@ -70,15 +70,15 @@ def share_email():
     """Share a photo via Email"""
     user_id = get_jwt_identity()
     data = request.get_json()
-    
+
     photo_id = data.get('photo_id')
     recipient = data.get('recipient')
     subject = data.get('subject', 'Photo shared from Drishyamitra')
     body = data.get('body', 'Here is your photo!')
-    
+
     if not photo_id or not recipient:
         return error_response("photo_id and recipient are required", 400)
-    
+
     success, result = DeliveryService.share_photo_via_email(
         user_id=user_id, 
         photo_id=photo_id, 
@@ -86,7 +86,7 @@ def share_email():
         subject=subject,
         body=body
     )
-    
+
     if success:
         return success_response({"status": "sent", "message": result}, "Email sent successfully", 200)
     else:
@@ -98,21 +98,21 @@ def share_folder_whatsapp():
     """Share an entire folder via WhatsApp"""
     user_id = get_jwt_identity()
     data = request.get_json()
-    
+
     person_id = data.get('person_id')
     recipient = data.get('recipient')
     message = data.get('message', 'Sharing a folder with you from Drishyamitra!')
-    
+
     if not person_id or not recipient:
         return error_response("person_id and recipient are required", 400)
-    
+
     success, result = DeliveryService.share_folder_via_whatsapp(
         user_id=user_id, 
         person_id=person_id, 
         recipient=recipient, 
         message=message
     )
-    
+
     if success:
         return success_response({"status": "queued", "message": result}, "Folder WhatsApp delivery queued", 200)
     else:
@@ -124,15 +124,15 @@ def share_folder_email():
     """Share an entire folder via Email"""
     user_id = get_jwt_identity()
     data = request.get_json()
-    
+
     person_id = data.get('person_id')
     recipient = data.get('recipient')
     subject = data.get('subject', 'Folder shared from Drishyamitra')
     body = data.get('body', 'Here are the photos from my organized folder.')
-    
+
     if not person_id or not recipient:
         return error_response("person_id and recipient are required", 400)
-    
+
     success, result = DeliveryService.share_folder_via_email(
         user_id=user_id, 
         person_id=person_id, 
@@ -140,7 +140,7 @@ def share_folder_email():
         subject=subject,
         body=body
     )
-    
+
     if success:
         return success_response({"status": "sent", "message": result}, "Folder email sent successfully", 200)
     else:

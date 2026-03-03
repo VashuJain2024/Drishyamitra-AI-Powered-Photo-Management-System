@@ -35,23 +35,22 @@ def chat():
     data = request.get_json()
     user_message = data.get('message')
     history = data.get('history', [])
-    
+
     try:
-        # Get AI response (using Groq + Intent Extraction)
+
         ai_response = ai_service.get_response(user_message, history, user_id=user_id)
-        
-        # Log the interaction asynchronously
+
         is_fallback = "trouble connecting" in ai_response.lower() or "unrecognised intent" in ai_response.lower()
         threading.Thread(
             target=log_chat_async,
             args=(current_app._get_current_object(), user_id, user_message, ai_response, is_fallback)
         ).start()
-        
+
         return success_response({
             "response": ai_response,
             "timestamp": datetime.utcnow().isoformat()
         }, message="AI response generated successfully")
-    
+
     except Exception as e:
         current_app.logger.error(f"Chat Route Error: {e}")
         return error_response(message=f"Failed to generate AI response: {str(e)}", status_code=500)

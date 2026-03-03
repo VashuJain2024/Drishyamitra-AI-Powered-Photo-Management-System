@@ -7,26 +7,18 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Add the backend directory to the sys.path so we can import our app modules
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.database import db
 from config import Config
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Set the sqlalchemy.url dynamically from the config
 config.set_main_option('sqlalchemy.url', Config.SQLALCHEMY_DATABASE_URI)
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
 from models.user import User
 from models.photo import Photo
 from models.face import Face
@@ -34,12 +26,6 @@ from models.person import Person
 from models.history import DeliveryHistory
 
 target_metadata = db.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -64,7 +50,6 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -85,7 +70,6 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()

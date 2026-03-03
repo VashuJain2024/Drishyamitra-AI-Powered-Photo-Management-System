@@ -8,11 +8,11 @@ def clean_whatsapp():
         "d:/Drishyamitra/whatsapp-service/.wwebjs_cache",
         "d:/Drishyamitra/whatsapp-service/uploads"
     ]
-    
+
     print("Stopping any ghost node/chrome processes...")
     subprocess.run("taskkill /F /IM node.exe /T", shell=True, capture_output=True)
     subprocess.run("taskkill /F /IM chrome.exe /T", shell=True, capture_output=True)
-    
+
     for p in paths:
         if os.path.exists(p):
             print(f"Removing {p}...")
@@ -22,7 +22,7 @@ def clean_whatsapp():
                 print(f"Failed to remove {p}: {e}")
         else:
             print(f"Path not found: {p}")
-            
+
     print("Cleanup complete.")
 
 if __name__ == "__main__":

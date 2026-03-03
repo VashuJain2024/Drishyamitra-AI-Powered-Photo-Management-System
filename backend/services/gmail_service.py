@@ -17,7 +17,7 @@ class GmailService:
         self.email_user = os.environ.get("EMAIL_USER")
         self.email_password = os.environ.get("EMAIL_PASSWORD")
         self.smtp_server = "smtp.gmail.com"
-        self.smtp_port = 465 # SSL
+        self.smtp_port = 465 
 
     def send_email(self, to, subject, body, attachment_path=None):
         """Compose and send a MIME message via SMTP"""
@@ -30,29 +30,29 @@ class GmailService:
             message['From'] = self.email_user
             message['To'] = to
             message['Subject'] = subject
-            
+
             message.attach(MIMEText(body, 'plain'))
 
             if attachment_path:
                 paths = attachment_path if isinstance(attachment_path, list) else [attachment_path]
                 total_size = 0
-                
+
                 for path in paths:
                     if not os.path.exists(path):
                         continue
-                        
+
                     file_size = os.path.getsize(path)
                     total_size += file_size
-                    
-                    if total_size > 22 * 1024 * 1024: # Gmail limit is ~25MB total
+
+                    if total_size > 22 * 1024 * 1024: 
                         return False, f"Total attachments size exceeds 22MB limit. (Photo: {os.path.basename(path)})"
 
                     content_type, encoding = mimetypes.guess_type(path)
                     if content_type is None or encoding is not None:
                         content_type = 'application/octet-stream'
-                    
+
                     main_type, sub_type = content_type.split('/', 1)
-                    
+
                     with open(path, 'rb') as f:
                         file_data = f.read()
 
@@ -60,15 +60,14 @@ class GmailService:
                         part = MIMEImage(file_data, _subtype=sub_type)
                     else:
                         part = MIMEApplication(file_data, _subtype=sub_type)
-                    
+
                     part.add_header('Content-Disposition', 'attachment', filename=os.path.basename(path))
                     message.attach(part)
 
-            # Connect and send
             with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port) as server:
                 server.login(self.email_user, self.email_password)
                 server.send_message(message)
-            
+
             logger.info(f"Email sent successfully via SMTP to {to}")
             return True, "Email sent successfully"
 

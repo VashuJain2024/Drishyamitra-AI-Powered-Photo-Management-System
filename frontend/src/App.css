@@ -1,13 +1,13 @@
-/* Layout */
+
 .App {
   display: flex;
   min-height: 100vh;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
 }
 
 .App::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none; 
 }
 
 * {
@@ -17,7 +17,7 @@
   display: none;
 }
 
-/* Sidebar */
+
 .sidebar {
   width: var(--sidebar-w);
   background: rgba(15, 23, 42, 0.4);
@@ -83,7 +83,7 @@
   border-top: 1px solid var(--glass-border);
 }
 
-/* Main Content */
+
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-w);
@@ -99,7 +99,7 @@
   margin-bottom: 3rem;
 }
 
-/* Stats */
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -132,7 +132,7 @@
   letter-spacing: 0.1em;
 }
 
-/* Gallery */
+
 .gallery-controls {
   display: flex;
   justify-content: space-between;
@@ -184,7 +184,7 @@
   opacity: 1;
 }
 
-/* Chat Assistant */
+
 .chat-drawer {
   position: fixed;
   bottom: 2rem;
@@ -246,7 +246,7 @@
   border-bottom-right-radius: 4px;
 }
 
-/* Tables */
+
 .table-container {
   overflow: visible;
   border-radius: 20px;
@@ -292,7 +292,7 @@ td {
   color: var(--danger);
 }
 
-/* Landing Page */
+
 .landing-page {
   text-align: center;
   padding: 8rem 0;
@@ -306,7 +306,7 @@ td {
   color: var(--text-dim);
 }
 
-/* Floating Ornaments */
+
 .orb {
   position: absolute;
   border-radius: 50%;

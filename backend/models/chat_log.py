@@ -3,15 +3,15 @@ from datetime import datetime
 
 class ChatLog(db.Model):
     __tablename__ = 'chat_logs'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     query = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text)
     is_fallback = db.Column(db.Boolean, default=False)
-    metadata_json = db.Column(db.JSON) # Additional context or extracted params
+    metadata_json = db.Column(db.JSON) 
     timestamp = db.Column(db.DateTime, default=datetime.now, index=True)
-    
+
     def to_dict(self):
         return {
             "id": self.id,

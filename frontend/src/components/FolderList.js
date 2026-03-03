@@ -1,32 +1,41 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { FolderHeart } from 'lucide-react';
 
-const FolderList = ({ folders, onFolderClick }) => {
+export default function FolderList({ folders, onFolderClick }) {
     if (folders.length === 0) {
         return (
-            <div className="glass-card animate-fade-in" style={{ padding: '4rem', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-dim)' }}>No folders yet. Try organizing your photos!</p>
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-16 text-center shadow-lg">
+                <FolderHeart className="w-16 h-16 text-slate-500 mx-auto mb-4 opacity-50" />
+                <p className="text-slate-400 text-lg">No folders yet. Try organizing your photos!</p>
             </div>
         );
     }
 
     return (
-        <div className="photo-grid">
-            {folders.map((folder) => (
-                <div
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {folders.map((folder, i) => (
+                <motion.div
                     key={folder.id}
-                    className="glass-card folder-card animate-fade-in"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.05 }}
+                    whileHover={{ y: -5, scale: 1.02 }}
                     onClick={() => onFolderClick(folder)}
-                    style={{ cursor: 'pointer', textAlign: 'center', transition: 'transform 0.3s ease', padding: '1rem' }}
+                    className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-3xl p-8 cursor-pointer shadow-lg hover:border-primary-500/50 hover:shadow-primary-500/20 transition-all group relative overflow-hidden"
                 >
-                    <div className="folder-icon" style={{ fontSize: '4rem', marginBottom: '1rem' }}>📂</div>
-                    <div className="folder-name" style={{ fontSize: '1.2rem', fontWeight: 600 }}>{folder.name}</div>
-                    <div className="folder-count" style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginTop: '2.5rem' }}>
-                        {folder.face_count} Photos
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 rounded-full blur-3xl group-hover:bg-primary-500/10 transition-colors" />
+
+                    <div className="bg-slate-700/50 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <FolderHeart className="w-10 h-10 text-primary-400" />
                     </div>
-                </div>
+
+                    <h3 className="text-xl font-bold text-white mb-2 truncate">{folder.name}</h3>
+                    <p className="text-sm text-slate-400 font-medium">
+                        {folder.photo_count} {folder.photo_count === 1 ? 'Photo' : 'Photos'}
+                    </p>
+                </motion.div>
             ))}
         </div>
     );
-};
-
-export default FolderList;
+}

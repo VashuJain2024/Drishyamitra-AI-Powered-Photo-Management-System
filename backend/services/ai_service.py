@@ -6,7 +6,6 @@ from services.chat_actions import ACTION_MAP
 
 logger = logging.getLogger(__name__)
 
-
 class AIService:
     def __init__(self):
         self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -89,18 +88,15 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
         if not api_key or api_key == "your_actual_groq_api_key_here":
             return self._mock_fallback(message, user_id)
 
-        # Start with system prompt
         messages = [
             {"role": "system", "content": self.system_prompt}
         ]
 
-        # ✅ Proper history sanitization
         if history:
             for msg in history:
                 role = msg.get("role", "user")
                 content = msg.get("content", "")
 
-                # Convert frontend role
                 if role == "bot":
                     role = "assistant"
 
@@ -113,7 +109,6 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
                         "content": content
                     })
 
-        # Add current user message
         messages.append({
             "role": "user",
             "content": message
@@ -130,12 +125,11 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
             ai_content = completion.choices[0].message.content or ""
             ai_content = ai_content.strip()
 
-            # Attempt robust intent parsing using regex
             try:
                 import re
-                # Find something that looks like a JSON object
+
                 json_match = re.search(r'\{.*"intent".*\}', ai_content, re.DOTALL)
-                
+
                 if json_match:
                     cleaned = json_match.group(0)
                     intent_data = json.loads(cleaned)

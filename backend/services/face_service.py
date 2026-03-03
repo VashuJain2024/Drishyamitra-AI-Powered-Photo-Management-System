@@ -13,7 +13,6 @@ from models.face import Face
 
 logger = logging.getLogger(__name__)
 
-
 class FaceService:
 
     @staticmethod
@@ -34,15 +33,13 @@ class FaceService:
 
         service = FaceRecognitionService()
 
-        # --- 1. Get embeddings via full pipeline ---
         faces_data = service.detect_and_extract_faces(image_path)
         if not faces_data:
             logger.info(f"No faces found in photo {photo_id} at {image_path}")
             return []
 
-        # --- 2. Get landmarks via MTCNN (best-effort, may return fewer) ---
         landmark_data = service.extract_faces_with_landmarks(image_path)
-        landmark_map = {}  # index → landmarks dict
+        landmark_map = {}  
         for idx, lm in enumerate(landmark_data):
             landmark_map[idx] = lm.get("landmarks", {})
 
@@ -66,14 +63,11 @@ class FaceService:
                     logger.warning(f"Empty embedding for face #{idx} in photo {photo_id} — skipping")
                     continue
 
-                # --- 3. Match against existing profiles ---
                 matched_person, scores = service.match_face(embedding, user_id)
 
-                # --- 4. Auto-create unknown person if no match ---
                 if matched_person is None:
                     matched_person = service.auto_create_person(user_id)
 
-                # --- 5. Persist face record ---
                 face = Face(
                     photo_id      = photo_id,
                     person_id     = matched_person.id,
@@ -87,7 +81,7 @@ class FaceService:
                 faces_created.append(face)
 
             db.session.commit()
-            # Invalidate cache so the new face is included in future matches
+
             service.invalidate_cache(user_id)
             logger.info(
                 f"Stored {len(faces_created)} face(s) for photo {photo_id} "
