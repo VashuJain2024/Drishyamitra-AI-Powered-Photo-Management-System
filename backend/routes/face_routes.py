@@ -126,6 +126,52 @@ def delete_person(person_id):
     FaceRecognitionService().invalidate_cache(user_id)
     return success_response({"deleted": True, "name": name}, f"Person '{name}' deleted")
 
+@face_bp.route("/label", methods=["POST"])
+@jwt_required()
+def label_face():
+    """Assign a name/person to a specific face bounding box in a photo."""
+    user_id = get_jwt_identity()
+    data = request.get_json(silent=True) or {}
+
+    photo_id = data.get('photo_id')
+    face_id = data.get('face_id')
+    person_name = (data.get('person_name') or "").strip()
+
+    if not photo_id or face_id is None or not person_name:
+        return error_response("photo_id, face_id, and person_name are required", 400)
+
+    photo = Photo.query.filter_by(id=photo_id, user_id=user_id).first()
+    if not photo:
+        return error_response("Photo not found", 404)
+
+    faces = Face.query.filter_by(photo_id=photo_id).all()
+    target_face = None
+
+    if face_id < 100: 
+        if face_id < len(faces):
+            target_face = faces[face_id]
+    else:
+        target_face = next((f for f in faces if f.id == face_id), None)
+
+    if not target_face:
+        return error_response("Face not found in this photo", 404)
+
+    person = Person.query.filter_by(name=person_name, user_id=user_id).first()
+    if not person:
+        person = Person(name=person_name, user_id=user_id, is_auto_created=False)
+        db.session.add(person)
+        db.session.flush()
+
+    target_face.person_id = person.id
+    db.session.commit()
+
+    FaceRecognitionService().invalidate_cache(user_id)
+    return success_response({
+        "face_id": target_face.id,
+        "person_id": person.id,
+        "person_name": person.name
+    }, "Face labeled successfully")
+
 @face_bp.route("/search", methods=["POST"])
 @jwt_required()
 def search_by_face():

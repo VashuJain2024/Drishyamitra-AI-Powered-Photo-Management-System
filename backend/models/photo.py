@@ -21,5 +21,14 @@ class Photo(db.Model):
             "filepath": self.filepath,
             "upload_date": self.upload_date.isoformat(),
             "user_id": self.user_id,
-            "mime_type": self.mime_type
+            "mime_type": self.mime_type,
+            "size": self.size,
+            "faces": [
+                {
+                    "id": f.id, 
+                    "person_id": f.person_id, 
+                    "person_name": f.person.name if f.person else "Unknown",
+                    "is_new": f.person_id is None
+                } for f in getattr(self, 'faces', [])
+            ]
         }

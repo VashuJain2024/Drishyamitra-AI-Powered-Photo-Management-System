@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Gallery from '../components/Gallery';
 import { motion } from 'framer-motion';
+import { useGlobalState } from '../context/GlobalStateContext';
+import { Search, Filter, SortDesc, Calendar } from 'lucide-react';
 
 export default function GalleryPage() {
-    const { token, waStatus } = useOutletContext();
-    const [photos, setPhotos] = useState([]);
+    const { waStatus } = useOutletContext();
+    const { photos, globalLoading, token, baseUrl, fetchPhotos, setActiveModal } = useGlobalState();
+
     const [waQr, setWaQr] = useState(null);
-
-    const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
-    useEffect(() => {
-        fetchPhotos();
-
-    }, [token]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all'); 
+    const [sortBy, setSortBy] = useState('newest'); 
 
     useEffect(() => {
         if (!waStatus?.ready) {
@@ -24,18 +22,7 @@ export default function GalleryPage() {
         } else {
             setWaQr(null);
         }
-
     }, [waStatus?.ready]);
-
-    const fetchPhotos = async () => {
-        try {
-            const res = await fetch(`${baseUrl}/photos/`, { headers: { Authorization: `Bearer ${token}` } });
-            const data = await res.json();
-            if (data.status === 'success') setPhotos(data.data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
 
     const fetchWhatsAppQr = async () => {
         if (waStatus?.ready) return;
@@ -47,9 +34,7 @@ export default function GalleryPage() {
             } else {
                 setWaQr(null);
             }
-        } catch (e) {
-
-        }
+        } catch (e) { }
     };
 
     const handleWhatsAppShare = async (photoId) => {
@@ -100,13 +85,41 @@ export default function GalleryPage() {
             });
             const data = await res.json();
             if (res.ok && data.status === 'success') {
-
-                setPhotos(current => current.filter(p => p.id !== photoId));
+                fetchPhotos(); 
             } else {
                 alert(data.message || "Failed to delete photo");
             }
         } catch (err) { alert("Network error while deleting photo."); }
     };
+
+    const processedPhotos = useMemo(() => {
+        let result = [...photos];
+
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(photo =>
+                photo.faces?.some(f => f.person_name && f.person_name.toLowerCase().includes(term))
+            );
+        }
+
+        if (filterStatus === 'recognized') {
+            result = result.filter(photo => photo.faces?.some(f => f.person_id !== null));
+        } else if (filterStatus === 'unrecognized') {
+            result = result.filter(photo => photo.faces?.some(f => f.person_id === null));
+        }
+
+        result.sort((a, b) => {
+            const dateA = new Date(a.upload_date).getTime();
+            const dateB = new Date(b.upload_date).getTime();
+            return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
+        });
+
+        return result;
+    }, [photos, searchTerm, filterStatus, sortBy]);
+
+    if (globalLoading && photos.length === 0) {
+        return <div className="p-8 text-slate-400">Loading your collections...</div>;
+    }
 
     return (
         <motion.div
@@ -114,16 +127,6 @@ export default function GalleryPage() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
         >
-            <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">Collections</h2>
-            </div>
-
-            <Gallery
-                photos={photos}
-                onWhatsAppShare={handleWhatsAppShare}
-                onEmailShare={handleEmailShare}
-                onPhotoDelete={handlePhotoDelete}
-            />
 
             {waQr && (
                 <motion.div
@@ -145,6 +148,49 @@ export default function GalleryPage() {
                     </div>
                 </motion.div>
             )}
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h2 className="text-3xl font-bold tracking-tight">Collections</h2>
+
+                <div className="flex flex-wrap items-center gap-3 bg-slate-800/50 p-2 rounded-2xl border border-slate-700/50">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search people..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-slate-900/50 border border-slate-700 text-sm rounded-xl pl-9 pr-4 py-2 focus:ring-2 focus:ring-primary-500 focus:outline-none w-48 transition-all focus:w-64"
+                        />
+                    </div>
+
+                    <div className="h-6 w-px bg-slate-700/50 mx-1"></div>
+
+                    <button
+                        onClick={() => setFilterStatus(prev => prev === 'all' ? 'recognized' : prev === 'recognized' ? 'unrecognized' : 'all')}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterStatus !== 'all' ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30' : 'bg-slate-900/50 border border-slate-700 text-slate-300 hover:bg-slate-700'}`}
+                    >
+                        <Filter className="w-4 h-4" />
+                        Status: {filterStatus === 'all' ? 'All' : filterStatus === 'recognized' ? 'Recognized' : 'Unknown'}
+                    </button>
+
+                    <button
+                        onClick={() => setSortBy(prev => prev === 'newest' ? 'oldest' : 'newest')}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-slate-900/50 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors"
+                    >
+                        {sortBy === 'newest' ? <SortDesc className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+                        {sortBy === 'newest' ? 'Newest' : 'Oldest'}
+                    </button>
+                </div>
+            </div>
+
+            <Gallery
+                photos={processedPhotos}
+                onWhatsAppShare={handleWhatsAppShare}
+                onEmailShare={handleEmailShare}
+                onPhotoDelete={handlePhotoDelete}
+                onPhotoClick={(photo) => setActiveModal({ type: 'photo', payload: photo })}
+            />
         </motion.div>
     );
 }

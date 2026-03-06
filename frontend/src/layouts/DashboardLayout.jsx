@@ -3,10 +3,16 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { UploadCloud, Zap } from 'lucide-react';
 import ChatAssistant from '../components/ChatAssistant';
+import { useGlobalState } from '../context/GlobalStateContext';
+import PhotoUpload from '../components/PhotoUpload';
+import FaceLabelingModal from '../components/FaceLabelingModal';
+import PhotoModal from '../components/PhotoModal';
 
 export default function DashboardLayout({ token, onLogout, organizing, onOrganize, uploading, onUpload }) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { activeModal, setActiveModal, fetchPhotos } = useGlobalState();
+    const [localUploading, setLocalUploading] = useState(false);
     const [waStatus, setWaStatus] = useState({ ready: false, status: 'Checking...' });
     const [chatOpen, setChatOpen] = useState(false);
     const [messages, setMessages] = useState([{ role: 'bot', content: 'Hello! I am Drishyamitra AI. How can I help you manage your photos today?' }]);
@@ -97,21 +103,17 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                             <Zap className="w-4 h-4 text-warning" />
                             {organizing ? 'Organizing...' : 'Organize AI'}
                         </button>
-                        <div className="relative">
-                            <button
-                                disabled={uploading}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white shadow-lg transition-all disabled:opacity-50"
-                            >
-                                <UploadCloud className="w-4 h-4" />
-                                {uploading ? 'Uploading...' : 'Add Photos'}
-                            </button>
-                            <input
-                                type="file"
-                                multiple
-                                onChange={onUpload}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                        </div>
+                        <PhotoUpload
+                            uploading={localUploading}
+                            setUploading={setLocalUploading}
+                            onUploadSuccess={(data) => {
+                                fetchPhotos();
+                                const uploadedPhoto = data.uploaded ? data.uploaded[0] : data;
+                                if (uploadedPhoto) {
+                                    setActiveModal({ type: 'label', photo: uploadedPhoto });
+                                }
+                            }}
+                        />
                     </div>
                 </header>
 
@@ -134,6 +136,24 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                 onSendMessage={handleSendMessage}
                 loading={chatLoading}
             />
+
+            {activeModal?.type === 'label' && (
+                <FaceLabelingModal
+                    photo={activeModal.photo}
+                    onClose={() => setActiveModal(null)}
+                    onComplete={() => {
+                        setActiveModal(null);
+                        setTimeout(() => alert("Face labeling complete!"), 300);
+                    }}
+                />
+            )}
+
+            {activeModal?.type === 'photo' && (
+                <PhotoModal
+                    photo={activeModal.payload}
+                    onClose={() => setActiveModal(null)}
+                />
+            )}
         </div>
     );
 }

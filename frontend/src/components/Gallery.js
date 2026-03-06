@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Mail, ImageIcon, Trash2 } from 'lucide-react';
 
-export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhotoDelete }) {
+export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhotoDelete, onPhotoClick }) {
     if (photos.length === 0) {
         return (
             <div className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-16 text-center shadow-lg">
@@ -25,7 +25,10 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                         className="group relative bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:shadow-primary-500/10 transition-all"
                     >
                         {/* Image Container */}
-                        <div className="aspect-square w-full overflow-hidden bg-slate-900 relative">
+                        <div
+                            className="aspect-square w-full overflow-hidden bg-slate-900 relative cursor-pointer"
+                            onClick={() => onPhotoClick && onPhotoClick(p)}
+                        >
                             <img
                                 src={`http://localhost:5000/api/dashboard/media/${p.filename}`}
                                 alt={p.filename}
@@ -33,9 +36,25 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                             />
 
+                            {/* Recognized Faces Badges */}
+                            {p.faces && p.faces.length > 0 && (
+                                <div className="absolute top-2 left-2 flex -space-x-2 z-10 transition-transform duration-300">
+                                    {p.faces.slice(0, 3).map((f, idx) => (
+                                        <div key={idx} className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-[10px] font-bold text-white shadow-lg overflow-hidden tooltip-trigger" title={f.person_name || 'Unknown'}>
+                                            {f.person_name ? f.person_name.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                    ))}
+                                    {p.faces.length > 3 && (
+                                        <div className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
+                                            +{p.faces.length - 3}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Hover Overlay with Action Buttons */}
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                                <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
+                                <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300 pointer-events-auto">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onWhatsAppShare(p.id); }}
                                         className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-2 rounded-xl text-xs font-semibold shadow-lg transition-colors"
@@ -59,7 +78,7 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                             </div>
                         </div>
 
-                        {}
+                        { }
                         <div className="p-4">
                             <p className="text-sm font-medium text-slate-200 truncate" title={p.filename}>
                                 {p.filename.split('_').slice(2).join('_')}

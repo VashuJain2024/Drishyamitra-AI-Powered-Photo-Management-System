@@ -8,6 +8,7 @@ import FoldersPage from './pages/FoldersPage';
 import FolderDetailsPage from './pages/FolderDetailsPage';
 import HistoryPage from './pages/HistoryPage';
 import StatsPage from './pages/StatsPage';
+import { GlobalStateProvider } from './context/GlobalStateContext';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
@@ -72,31 +73,33 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={token ? <Navigate to="/dashboard" /> : <LandingPage />} />
-        <Route path="/auth" element={token ? <Navigate to="/dashboard" /> : <AuthPage onLoginComplete={setToken} />} />
+    <GlobalStateProvider token={token}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={token ? <Navigate to="/dashboard" /> : <LandingPage />} />
+          <Route path="/auth" element={token ? <Navigate to="/dashboard" /> : <AuthPage onLoginComplete={setToken} />} />
 
-        <Route path="/dashboard" element={
-          <DashboardLayout
-            token={token}
-            onLogout={handleLogout}
-            organizing={organizing}
-            onOrganize={handleOrganize}
-            uploading={uploading}
-            onUpload={handleUpload}
-          />
-        }>
-          <Route index element={<GalleryPage />} />
-          <Route path="folders" element={<FoldersPage />} />
-          <Route path="folders/:id" element={<FolderDetailsPage />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="stats" element={<StatsPage />} />
-        </Route>
+          <Route path="/dashboard" element={
+            <DashboardLayout
+              token={token}
+              onLogout={handleLogout}
+              organizing={organizing}
+              onOrganize={handleOrganize}
+              uploading={uploading}
+              onUpload={handleUpload}
+            />
+          }>
+            <Route index element={<GalleryPage />} />
+            <Route path="folders" element={<FoldersPage />} />
+            <Route path="folders/:id" element={<FolderDetailsPage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="stats" element={<StatsPage />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </GlobalStateProvider>
   );
 }
 

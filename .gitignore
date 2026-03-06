@@ -1,4 +1,3 @@
-# --- Frontend (Node.js) ---
 node_modules/
 frontend/node_modules/
 frontend/build/
@@ -7,13 +6,10 @@ frontend/coverage/
 frontend/.env*
 frontend/npm-debug.log*
 frontend/build_error.txt
-
-# --- Root Project ---
 build/
 dist/
 coverage/
 .DS_Store
-# --- Backend (Python) ---
 backend/venv/
 backend/env/
 .venv/
@@ -36,8 +32,6 @@ backend/backend_error.log
 backend/auth.json
 backend/credentials.json
 backend/token.pickle
-
-# --- Database & Storage ---
 *.db
 *.sqlite
 *.db-journal
@@ -49,14 +43,10 @@ backend/database/*.db-*
 backend/instance/
 backend/data/
 !backend/data/.gitkeep
-
-# --- Redis ---
 redis/
 dump.rdb
 temp-*.rdb
 *.rdb
-
-# --- WhatsApp Service ---
 whatsapp-service/node_modules/
 whatsapp-service/dist/
 whatsapp-service/.wwebjs_auth/
@@ -64,8 +54,6 @@ whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_cache/
 whatsapp-service/uploads/
 whatsapp-service/.env*
-
-# --- Testing & Utils ---
 coverage/
 .nyc_output/
 backend/test_*.py
@@ -79,12 +67,8 @@ backend/db_check_light.py
 backend/retrigger_faces.py
 backend/retrigger_light.py
 backend/db_diag.py
-
-# --- Environment & Secrets ---
 .env*
 !.env.example
-
-# --- IDE & OS ---
 .vscode/
 .idea/
 .gemini/
@@ -92,12 +76,9 @@ backend/db_diag.py
 Thumbs.db
 *.swp
 *.swo
-
-# --- Logs ---
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
 strip_comments.py
