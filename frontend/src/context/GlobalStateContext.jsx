@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const GlobalStateContext = createContext();
@@ -8,17 +8,17 @@ export const useGlobalState = () => useContext(GlobalStateContext);
 export const GlobalStateProvider = ({ children, token }) => {
     const [photos, setPhotos] = useState([]);
     const [persons, setPersons] = useState([]);
-    const [activeModal, setActiveModal] = useState(null); 
+    const [activeModal, setActiveModal] = useState(null);
     const [globalLoading, setGlobalLoading] = useState(false);
 
     const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
     const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
-    const getAxiosConfig = () => ({
+    const getAxiosConfig = useCallback(() => ({
         headers: { Authorization: `Bearer ${token}` }
-    });
+    }), [token]);
 
-    const fetchPhotos = async () => {
+    const fetchPhotos = useCallback(async () => {
         if (!token) return;
         try {
             setGlobalLoading(true);
@@ -31,9 +31,9 @@ export const GlobalStateProvider = ({ children, token }) => {
         } finally {
             setGlobalLoading(false);
         }
-    };
+    }, [token, baseUrl, getAxiosConfig]);
 
-    const fetchPersons = async () => {
+    const fetchPersons = useCallback(async () => {
         if (!token) return;
         try {
             const res = await axios.get(`${baseUrl}/face/persons`, getAxiosConfig());
@@ -43,7 +43,7 @@ export const GlobalStateProvider = ({ children, token }) => {
         } catch (error) {
             console.error('Failed to fetch persons:', error);
         }
-    };
+    }, [token, baseUrl, getAxiosConfig]);
 
     useEffect(() => {
         if (token) {
@@ -54,7 +54,7 @@ export const GlobalStateProvider = ({ children, token }) => {
             setPersons([]);
             setActiveModal(null);
         }
-    }, [token]);
+    }, [token, fetchPhotos, fetchPersons]);
 
     const value = {
         photos,

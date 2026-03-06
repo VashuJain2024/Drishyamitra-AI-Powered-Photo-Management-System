@@ -37,7 +37,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-me'
-    JWT_ACCESS_TOKEN_EXPIRES = 3600  
+    JWT_ACCESS_TOKEN_EXPIRES = 86400  
     JWT_REFRESH_TOKEN_EXPIRES = 2592000  
 
     SESSION_COOKIE_SECURE = True

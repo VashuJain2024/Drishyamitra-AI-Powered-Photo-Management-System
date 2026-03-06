@@ -1,24 +1,30 @@
+# Node & Build
 node_modules/
-frontend/node_modules/
-frontend/build/
-frontend/dist/
-frontend/coverage/
-frontend/.env*
-frontend/npm-debug.log*
-frontend/build_error.txt
+**/node_modules/
 build/
 dist/
 coverage/
-.DS_Store
+.nyc_output/
+frontend/build/
+frontend/dist/
+frontend/coverage/
+frontend/build_log.txt
+frontend/npm-debug.log*
+frontend/build_error.txt
+whatsapp-service/dist/
+whatsapp-service/uploads/
+
+# Python & Backend
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
 backend/venv/
 backend/env/
 .venv/
 env/
 venv/
 ENV/
-__pycache__/
-*.py[cod]
-*$py.class
 .pytest_cache/
 .tox/
 .eggs/
@@ -26,12 +32,20 @@ __pycache__/
 *.egg
 .mypy_cache/
 .python-version
-backend/.env
 backend/*.log
 backend/backend_error.log
 backend/auth.json
 backend/credentials.json
 backend/token.pickle
+backend/init_db_light.py
+backend/create_test_user.py
+backend/check_db_status.py
+backend/db_check_light.py
+backend/retrigger_faces.py
+backend/retrigger_light.py
+backend/db_diag.py
+
+# Database
 *.db
 *.sqlite
 *.db-journal
@@ -41,34 +55,30 @@ backend/database/*.db
 backend/database/*.sqlite
 backend/database/*.db-*
 backend/instance/
+
+# Data & Service Specific
 backend/data/
 !backend/data/.gitkeep
 redis/
 dump.rdb
 temp-*.rdb
 *.rdb
-whatsapp-service/node_modules/
-whatsapp-service/dist/
-whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_auth/
 whatsapp-service/.wwebjs_cache/
-whatsapp-service/uploads/
-whatsapp-service/.env*
-coverage/
-.nyc_output/
+
+# Testing
 backend/test_*.py
 backend/*_test.py
 **/*_test.py
 **/test_*.py
-backend/init_db_light.py
-backend/create_test_user.py
-backend/check_db_status.py
-backend/db_check_light.py
-backend/retrigger_faces.py
-backend/retrigger_light.py
-backend/db_diag.py
+
+# Environment & Config
 .env*
 !.env.example
+frontend/.env*
+whatsapp-service/.env*
+
+# IDEs & System
 .vscode/
 .idea/
 .gemini/
@@ -76,9 +86,14 @@ backend/db_diag.py
 Thumbs.db
 *.swp
 *.swo
+
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Utility Scripts
 strip_comments.py
+

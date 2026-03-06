@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, User, Check, Loader2 } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalStateContext';
 import axios from 'axios';
@@ -13,35 +13,26 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
     const imgRef = useRef(null);
     const [imgRenderSize, setImgRenderSize] = useState({ width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 });
 
-    useEffect(() => {
-        let isMounted = true;
-        let attempts = 0;
-        const maxAttempts = 15; 
-
-        const fetchFaces = async () => {
-            try {
-                const res = await axios.get(`${baseUrl}/face/photo/${photo.id}`, getAxiosConfig());
-                if (res.data.status === 'success') {
-                    if (res.data.data.length > 0 || attempts >= maxAttempts) {
-                        if (isMounted) {
-                            setFaces(res.data.data);
-                            setLoading(false);
-                        }
-                    } else {
-
-                        attempts++;
-                        if (isMounted) setTimeout(fetchFaces, 2000);
-                    }
+    const fetchFaces = useCallback(async () => {
+        try {
+            const res = await axios.get(`${baseUrl}/face/photo/${photo.id}`, getAxiosConfig());
+            if (res.data.status === 'success') {
+                if (res.data.data.length > 0) {
+                    setFaces(res.data.data);
+                    setLoading(false);
+                } else {
+                    setTimeout(fetchFaces, 2000);
                 }
-            } catch (err) {
-                console.error("Failed to fetch faces", err);
-                if (isMounted) setLoading(false);
             }
-        };
+        } catch (err) {
+            console.error("Failed to fetch faces", err);
+            setLoading(false);
+        }
+    }, [photo.id, baseUrl, getAxiosConfig]);
 
+    useEffect(() => {
         fetchFaces();
-        return () => { isMounted = false; };
-    }, [photo.id, baseUrl]);
+    }, [fetchFaces]);
 
     const unlabeledFaces = faces.filter(f => f.person_id === null);
 
@@ -73,7 +64,7 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                 if (currentFaceIndex + 1 < unlabeledFaces.length) {
                     setCurrentFaceIndex(currentFaceIndex + 1);
                 } else {
-                    onComplete(); 
+                    onComplete();
                 }
             }
         } catch (err) {

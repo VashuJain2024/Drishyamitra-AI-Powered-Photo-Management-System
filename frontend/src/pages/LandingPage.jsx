@@ -7,7 +7,7 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center relative overflow-hidden">
-            {}
+            { }
             <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-primary-600/30 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[150px]" />
 
@@ -17,6 +17,19 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="z-10 text-center px-6 max-w-4xl"
             >
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="mb-8 flex justify-center"
+                >
+                    <img
+                        src="/drishyamitraIcon.png"
+                        alt="Drishyamitra Logo"
+                        className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                    />
+                </motion.div>
+
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 flex items-center justify-center gap-2">
                     Drishyamitra<span className="text-primary-400">AI</span>
                 </h1>

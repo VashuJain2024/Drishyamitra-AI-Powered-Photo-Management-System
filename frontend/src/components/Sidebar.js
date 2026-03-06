@@ -13,9 +13,12 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
     return (
         <aside className="w-64 bg-slate-900/80 backdrop-blur-xl border-r border-slate-800 flex flex-col h-full z-20">
             <div className="p-8">
-                <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-1 cursor-pointer">
+                <button
+                    onClick={() => onNavigate('/dashboard')}
+                    className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity outline-none"
+                >
                     Drishyamitra<span className="text-primary-500">AI</span>
-                </h1>
+                </button>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">

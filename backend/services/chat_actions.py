@@ -21,13 +21,16 @@ def get_recent_deliveries(params=None):
         ).order_by(DeliveryHistory.timestamp.desc()).all()
 
         if not history:
-            return "No recent deliveries found."
+            return {"text": "No recent deliveries found.", "data": None}
 
         result = [f"- {h.action} on {h.timestamp.strftime('%Y-%m-%d %H:%M')}" for h in history]
-        return "\n".join(result)
+        return {
+            "text": "\n".join(result),
+            "data": {"type": "deliveries", "deliveries": [{"action": h.action, "timestamp": h.timestamp.isoformat()} for h in history]}
+        }
     except Exception as e:
         logger.error(f"Error in get_recent_deliveries: {e}")
-        return "Sorry, I couldn't retrieve the delivery history right now."
+        return {"text": "Sorry, I couldn't retrieve the delivery history right now.", "data": None}
 
 def find_photos_by_person(params=None):
     """Find photos associated with a specific person"""
@@ -36,7 +39,7 @@ def find_photos_by_person(params=None):
         user_id = params.get('user_id')
 
         if not name:
-            return "Please provide a person's name."
+            return {"text": "Please provide a person's name.", "data": None}
 
         person = Person.query.filter(
             Person.user_id == user_id,
@@ -44,7 +47,7 @@ def find_photos_by_person(params=None):
         ).first()
 
         if not person:
-            return f"I couldn't find anyone named '{name}' in your collection."
+            return {"text": f"I couldn't find anyone named '{name}' in your collection.", "data": None}
 
         photos = Photo.query.join(Photo.faces).filter(
             Photo.user_id == user_id,
@@ -52,12 +55,15 @@ def find_photos_by_person(params=None):
         ).all()
 
         if not photos:
-            return f"I found {person.name}, but there are no photos associated with them."
+            return {"text": f"I found {person.name}, but there are no photos associated with them.", "data": None}
 
-        return f"I found {len(photos)} photos of {person.name}."
+        return {
+            "text": f"I found {len(photos)} photos of {person.name}.",
+            "data": {"type": "photos", "photos": [{"id": p.id, "filename": p.filename} for p in photos]}
+        }
     except Exception as e:
         logger.error(f"Error in find_photos_by_person: {e}")
-        return "Sorry, I encountered an error while searching for photos."
+        return {"text": "Sorry, I encountered an error while searching for photos.", "data": None}
 
 def list_known_persons(params=None):
     """List all identified persons for the user"""
@@ -66,13 +72,16 @@ def list_known_persons(params=None):
         persons = Person.query.filter_by(user_id=user_id).all()
 
         if not persons:
-            return "You haven't added or identified any persons yet."
+            return {"text": "You haven't added or identified any persons yet.", "data": None}
 
         names = [p.name for p in persons]
-        return f"I've identified these people in your photos: {', '.join(names)}."
+        return {
+            "text": f"I've identified these people in your photos: {', '.join(names)}.",
+            "data": {"type": "persons", "persons": [{"id": p.id, "name": p.name} for p in persons]}
+        }
     except Exception as e:
         logger.error(f"Error in list_known_persons: {e}")
-        return "Sorry, I couldn't retrieve the list of persons."
+        return {"text": "Sorry, I couldn't retrieve the list of persons.", "data": None}
 
 def get_system_stats(params=None):
     """Get general stats about the user's photos and persons"""
@@ -81,10 +90,13 @@ def get_system_stats(params=None):
         photo_count = Photo.query.filter_by(user_id=user_id).count()
         person_count = Person.query.filter_by(user_id=user_id).count()
 
-        return f"You have {photo_count} photos and {person_count} identified persons in your library."
+        return {
+            "text": f"You have {photo_count} photos and {person_count} identified persons in your library.",
+            "data": {"type": "stats", "photo_count": photo_count, "person_count": person_count}
+        }
     except Exception as e:
         logger.error(f"Error in get_system_stats: {e}")
-        return "I'm having trouble retrieving your system stats."
+        return {"text": "I'm having trouble retrieving your system stats.", "data": None}
 
 def share_photo_action(params=None):
     """Action to share a photo via email"""
@@ -96,7 +108,7 @@ def share_photo_action(params=None):
         body = params.get('body', 'Hi! Here is a photo from Drishyamitra.')
 
         if not photo_id or not recipient:
-            return "Please provide both a photo ID and a recipient email."
+            return {"text": "Please provide both a photo ID and a recipient email.", "data": None}
 
         success, result = DeliveryService.share_photo_via_email(
             user_id=user_id,
@@ -107,12 +119,15 @@ def share_photo_action(params=None):
         )
 
         if success:
-            return f"Photo shared successfully with {recipient}. Message ID: {result}"
+            return {
+                "text": f"Photo shared successfully with {recipient}. Message ID: {result}",
+                "data": {"type": "share", "success": True, "recipient": recipient, "photo_id": photo_id}
+            }
         else:
-            return f"Failed to share photo: {result}"
+            return {"text": f"Failed to share photo: {result}", "data": None}
     except Exception as e:
         logger.error(f"Error in share_photo_action: {e}")
-        return "Sorry, I couldn't share the photo."
+        return {"text": "Sorry, I couldn't share the photo.", "data": None}
 
 ACTION_MAP = {
     "get_deliveries": get_recent_deliveries,

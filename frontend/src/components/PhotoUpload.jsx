@@ -1,14 +1,15 @@
-import React, { useRef } from 'react';
-import { UploadCloud } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { UploadCloud, FileImage } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalStateContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }) {
     const { token, baseUrl, getAxiosConfig } = useGlobalState();
     const fileInputRef = useRef();
+    const [isDragging, setIsDragging] = useState(false);
 
-    const handleUpload = async (e) => {
-        const files = e.target.files;
+    const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         setUploading(true);
         const formData = new FormData();
@@ -39,11 +40,36 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
         }
     };
 
+    const handleFileSelect = (e) => {
+        processFiles(e.target.files);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        processFiles(e.dataTransfer.files);
+    };
+
     return (
-        <div className="relative">
+        <div
+            className="relative"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             <button
                 disabled={uploading}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white shadow-lg transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white shadow-lg transition-all disabled:opacity-50 active:scale-95"
             >
                 <UploadCloud className="w-4 h-4" />
                 {uploading ? 'Uploading...' : 'Add Photos'}
@@ -53,9 +79,30 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={handleUpload}
+                onChange={handleFileSelect}
                 className="absolute inset-0 opacity-0 cursor-pointer"
             />
+
+            <AnimatePresence>
+                {isDragging && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-primary-600/20 backdrop-blur-[2px] border-4 border-dashed border-primary-500 flex items-center justify-center pointer-events-none"
+                    >
+                        <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 flex flex-col items-center gap-4">
+                            <div className="w-20 h-20 rounded-full bg-primary-600/20 flex items-center justify-center">
+                                <FileImage className="w-10 h-10 text-primary-400 animate-bounce" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-xl font-bold text-white">Drop your memories</h3>
+                                <p className="text-slate-400 text-sm">Release to upload your photos instantly</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

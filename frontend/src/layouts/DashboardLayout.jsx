@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { UploadCloud, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import ChatAssistant from '../components/ChatAssistant';
 import { useGlobalState } from '../context/GlobalStateContext';
 import PhotoUpload from '../components/PhotoUpload';
@@ -15,9 +16,33 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
     const [localUploading, setLocalUploading] = useState(false);
     const [waStatus, setWaStatus] = useState({ ready: false, status: 'Checking...' });
     const [chatOpen, setChatOpen] = useState(false);
-    const [messages, setMessages] = useState([{ role: 'bot', content: 'Hello! I am Drishyamitra AI. How can I help you manage your photos today?' }]);
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('chatHistory');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse chat history:", e);
+            }
+        }
+        return [{ role: 'bot', content: 'Hello! I am Drishyamitra AI. How can I help you manage your photos today?' }];
+    });
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
+
+    useEffect(() => {
+        localStorage.setItem('chatHistory', JSON.stringify(messages));
+    }, [messages]);
+
+    const fetchWhatsAppStatus = useCallback(async () => {
+        try {
+            const res = await fetch(`http://localhost:3001/status`);
+            const data = await res.json();
+            setWaStatus({ ready: data.ready, status: data.status });
+        } catch (err) {
+            setWaStatus({ ready: false, status: 'Offline' });
+        }
+    }, []);
 
     useEffect(() => {
         if (!token) {
@@ -28,17 +53,7 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
         fetchWhatsAppStatus();
         return () => clearInterval(interval);
 
-    }, [token, navigate]);
-
-    const fetchWhatsAppStatus = async () => {
-        try {
-            const res = await fetch(`http://localhost:3001/status`);
-            const data = await res.json();
-            setWaStatus({ ready: data.ready, status: data.status });
-        } catch (err) {
-            setWaStatus({ ready: false, status: 'Offline' });
-        }
-    };
+    }, [token, navigate, fetchWhatsAppStatus]);
 
     const handleWhatsAppReset = async () => {
         if (!window.confirm("Are you sure you want to disconnect WhatsApp and generate a new QR code?")) return;
@@ -51,33 +66,51 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
         }
     };
 
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!chatInput.trim() || chatLoading) return;
-        const msg = chatInput;
-        setChatInput('');
-        setMessages(prev => [...prev, { role: 'user', content: msg }]);
-        setChatLoading(true);
+    const handleSendMessage = useCallback(async (e, forcedText = null) => {
+        if (e && e.preventDefault) e.preventDefault();
+
+        const messageToSend = forcedText || chatInput;
+        if (!messageToSend.trim()) return;
 
         const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
         const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
+        const newMsg = { role: 'user', content: messageToSend };
+        setMessages(prev => [...prev, newMsg]);
+        setChatInput('');
+        setChatLoading(true);
+
         try {
-            const res = await fetch(`${baseUrl}/chat/`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg, history: messages })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                setMessages(prev => [...prev, { role: 'bot', content: data.data.response }]);
+            const res = await axios.post(
+                `${baseUrl}/chat/`,
+                {
+                    message: newMsg.content,
+                    history: messages.slice(-5)
+                },
+                {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }
+            );
+
+            if (res.data.status === 'success') {
+                setMessages(prev => [...prev, {
+                    role: 'bot',
+                    content: res.data.data.response,
+                    data: res.data.data.data
+                }]);
+            } else {
+                throw new Error("API returned failure");
             }
         } catch (err) {
             console.error(err);
+            setMessages(prev => [...prev, {
+                role: 'bot',
+                content: "I'm having trouble connecting to the server. Please try again later."
+            }]);
         } finally {
             setChatLoading(false);
         }
-    };
+    }, [chatInput, messages, token]);
 
     return (
         <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">

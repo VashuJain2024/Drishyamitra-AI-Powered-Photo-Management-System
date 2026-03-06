@@ -5,29 +5,43 @@ import { Loader2 } from 'lucide-react';
 
 export default function AuthPage({ onLoginComplete }) {
     const [loading, setLoading] = useState(false);
+    const [mode, setMode] = useState('login'); // 'login' or 'register'
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        password: ''
+    });
     const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const fields = e.target;
-        const username = fields[0].value;
-        const password = fields[1].value;
 
         const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
         const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+        const endpoint = mode === 'login' ? 'login' : 'register';
 
         try {
-            const res = await fetch(`${baseUrl}/auth/login`, {
+            const res = await fetch(`${baseUrl}/auth/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify(formData)
             });
             const data = await res.json();
+
             if (data.status === 'success') {
-                document.cookie = `token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
-                onLoginComplete(data.data.access_token);
-                navigate('/dashboard');
+                if (mode === 'login') {
+                    document.cookie = `token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
+                    onLoginComplete(data.data.access_token);
+                    navigate('/dashboard');
+                } else {
+                    alert("Registration successful! Please sign in.");
+                    setMode('login');
+                }
             } else {
                 alert(data.message || "Authentication failed");
             }
@@ -40,7 +54,7 @@ export default function AuthPage({ onLoginComplete }) {
 
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
-            {}
+            { }
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary-600/20 rounded-full blur-[100px]" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]" />
 
@@ -50,35 +64,71 @@ export default function AuthPage({ onLoginComplete }) {
                 transition={{ duration: 0.5 }}
                 className="z-10 w-full max-w-md bg-slate-800/60 backdrop-blur-xl border border-slate-700 p-10 rounded-3xl shadow-2xl"
             >
-                <h2 className="text-3xl font-bold text-white mb-8 text-center tracking-tight">Welcome Back</h2>
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-white tracking-tight">
+                        {mode === 'login' ? 'Welcome Back' : 'Join Drishyamitra'}
+                    </h2>
+                    <p className="text-slate-400 mt-2 text-sm">
+                        {mode === 'login' ? 'Manage your memories' : 'Start organizing your photos with AI'}
+                    </p>
+                </div>
 
                 <form onSubmit={handleAuth} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-400 mb-2">Username</label>
                         <input
                             type="text"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleChange}
                             placeholder="e.g. admin"
                             required
-                            className="w-full bg-slate-900/50 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                            className="w-full bg-slate-900/50 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-inner"
                         />
                     </div>
+                    {mode === 'register' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="name@example.com"
+                                required
+                                className="w-full bg-slate-900/50 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-inner"
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-slate-400 mb-2">Password</label>
                         <input
                             type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
                             placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                             required
-                            className="w-full bg-slate-900/50 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                            className="w-full bg-slate-900/50 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-inner"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white font-semibold py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-primary-500/20 active:scale-95"
                     >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Secure Sign In'}
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (mode === 'login' ? 'Secure Sign In' : 'Create Account')}
                     </button>
                 </form>
+
+                <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
+                    <button
+                        onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                        className="text-sm font-medium text-slate-400 hover:text-primary-400 transition-colors"
+                    >
+                        {mode === 'login' ? "New to Drishyamitra? Create an account" : "Already have an account? Sign in"}
+                    </button>
+                </div>
             </motion.div>
         </div>
     );

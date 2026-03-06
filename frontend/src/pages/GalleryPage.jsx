@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Gallery from '../components/Gallery';
 import { motion } from 'framer-motion';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { Search, Filter, SortDesc, Calendar } from 'lucide-react';
+import Loader from '../components/Loader';
 
 export default function GalleryPage() {
     const { waStatus } = useOutletContext();
@@ -11,20 +12,10 @@ export default function GalleryPage() {
 
     const [waQr, setWaQr] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all'); 
-    const [sortBy, setSortBy] = useState('newest'); 
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [sortBy, setSortBy] = useState('newest');
 
-    useEffect(() => {
-        if (!waStatus?.ready) {
-            const interval = setInterval(fetchWhatsAppQr, 3000);
-            fetchWhatsAppQr();
-            return () => clearInterval(interval);
-        } else {
-            setWaQr(null);
-        }
-    }, [waStatus?.ready]);
-
-    const fetchWhatsAppQr = async () => {
+    const fetchWhatsAppQr = useCallback(async () => {
         if (waStatus?.ready) return;
         try {
             const qrRes = await fetch(`http://localhost:3001/qr`);
@@ -35,7 +26,17 @@ export default function GalleryPage() {
                 setWaQr(null);
             }
         } catch (e) { }
-    };
+    }, [waStatus?.ready]);
+
+    useEffect(() => {
+        if (!waStatus?.ready) {
+            const interval = setInterval(fetchWhatsAppQr, 3000);
+            fetchWhatsAppQr();
+            return () => clearInterval(interval);
+        } else {
+            setWaQr(null);
+        }
+    }, [waStatus?.ready, fetchWhatsAppQr]);
 
     const handleWhatsAppShare = async (photoId) => {
         const recipient = prompt("Enter phone number (with country code):");
@@ -85,7 +86,7 @@ export default function GalleryPage() {
             });
             const data = await res.json();
             if (res.ok && data.status === 'success') {
-                fetchPhotos(); 
+                fetchPhotos();
             } else {
                 alert(data.message || "Failed to delete photo");
             }
@@ -118,7 +119,7 @@ export default function GalleryPage() {
     }, [photos, searchTerm, filterStatus, sortBy]);
 
     if (globalLoading && photos.length === 0) {
-        return <div className="p-8 text-slate-400">Loading your collections...</div>;
+        return <Loader text="Loading your collection..." />;
     }
 
     return (

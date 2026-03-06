@@ -140,8 +140,12 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
                         params["user_id"] = user_id
 
                         if intent_name in ACTION_MAP:
-                            result = ACTION_MAP[intent_name](params)
-                            return self._generate_final_response(message, result)
+                            action_result = ACTION_MAP[intent_name](params)
+                            summary = self._generate_final_response(message, action_result.get("text", str(action_result)))
+                            return {
+                                "response": summary,
+                                "data": action_result.get("data")
+                            }
             except Exception as e:
                 logger.warning(f"Intent parsing failed: {e}")
                 pass

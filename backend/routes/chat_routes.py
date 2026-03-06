@@ -38,7 +38,14 @@ def chat():
 
     try:
 
-        ai_response = ai_service.get_response(user_message, history, user_id=user_id)
+        ai_response_obj = ai_service.get_response(user_message, history, user_id=user_id)
+
+        if isinstance(ai_response_obj, dict):
+            ai_response = ai_response_obj.get("response", "")
+            action_data = ai_response_obj.get("data", None)
+        else:
+            ai_response = ai_response_obj
+            action_data = None
 
         is_fallback = "trouble connecting" in ai_response.lower() or "unrecognised intent" in ai_response.lower()
         threading.Thread(
@@ -48,6 +55,7 @@ def chat():
 
         return success_response({
             "response": ai_response,
+            "data": action_data,
             "timestamp": datetime.utcnow().isoformat()
         }, message="AI response generated successfully")
 
