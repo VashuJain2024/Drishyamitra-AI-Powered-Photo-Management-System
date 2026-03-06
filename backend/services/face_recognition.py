@@ -11,7 +11,7 @@ import time
 import logging
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from deepface import DeepFace
+
 from models.database import db
 from models.face import Face
 from models.person import Person
@@ -93,6 +93,7 @@ class FaceRecognitionService:
         results = []
 
         try:
+            from deepface import DeepFace
             detected = DeepFace.extract_faces(
                 img_path=image_path,
                 detector_backend=self.DETECTOR_BACKEND,
@@ -110,6 +111,7 @@ class FaceRecognitionService:
         logger.info(f"RetinaFace found {len(detected)} face(s) in {os.path.basename(image_path)}")
 
         try:
+            from deepface import DeepFace
             aligned = DeepFace.extract_faces(
                 img_path=image_path,
                 detector_backend=self.ALIGN_BACKEND,   
@@ -151,6 +153,7 @@ class FaceRecognitionService:
         t0 = time.time()
         img_input = face_crop if face_crop is not None else image_path
         try:
+            from deepface import DeepFace
             objs = DeepFace.represent(
                 img_path=img_input,
                 model_name=self.MODEL_NAME,
@@ -181,6 +184,7 @@ class FaceRecognitionService:
         """
         t0 = time.time()
         try:
+            from deepface import DeepFace
             raw = DeepFace.represent(
                 img_path=image_path,
                 model_name=self.MODEL_NAME,

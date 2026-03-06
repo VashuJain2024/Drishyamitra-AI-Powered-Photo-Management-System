@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 export default function StatsPage() {
     const { token } = useOutletContext();
-    const [stats, setStats] = useState({ photo_count: 0, person_count: 0, history_count: 0 });
+    const [stats, setStats] = useState({ photo_count: 0, person_count: 0, history_count: 0, recognized_faces_count: 0 });
     const [historyData, setHistoryData] = useState([]);
 
     const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -24,7 +24,11 @@ export default function StatsPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
-            if (data.status === 'success') setStats(data.data);
+            console.log("Stats API Response:", data);
+            if (data.status === 'success') {
+                console.log("Setting stats:", data.data);
+                setStats(data.data);
+            }
         } catch (err) { console.error("Fetch stats failed", err); }
     };
 
@@ -50,7 +54,7 @@ export default function StatsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard label="Total Photos" value={`${stats.photo_count}`} />
-                <StatsCard label="Faces Recognized" value={stats.person_count} />
+                <StatsCard label="Faces Recognized" value={stats.recognized_faces_count} />
                 <StatsCard label="Total Shares" value={stats.history_count} />
             </div>
 

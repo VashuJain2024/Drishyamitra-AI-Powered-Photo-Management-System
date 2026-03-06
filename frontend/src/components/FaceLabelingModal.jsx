@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, User, Check, Loader2 } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalStateContext';
-import axios from 'axios';
+import { faceAPI, API_URL } from '../api';
+import toast from 'react-hot-toast';
 
 export default function FaceLabelingModal({ photo, onClose, onComplete }) {
-    const { baseUrl, getAxiosConfig, fetchPersons } = useGlobalState();
+    const { fetchPersons } = useGlobalState();
     const [faces, setFaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentFaceIndex, setCurrentFaceIndex] = useState(0);
@@ -15,12 +16,13 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
 
     const fetchFaces = useCallback(async () => {
         try {
-            const res = await axios.get(`${baseUrl}/face/photo/${photo.id}`, getAxiosConfig());
+            const res = await faceAPI.getFacesByPhoto(photo.id);
             if (res.data.status === 'success') {
                 if (res.data.data.length > 0) {
                     setFaces(res.data.data);
                     setLoading(false);
                 } else {
+
                     setTimeout(fetchFaces, 2000);
                 }
             }
@@ -28,7 +30,7 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             console.error("Failed to fetch faces", err);
             setLoading(false);
         }
-    }, [photo.id, baseUrl, getAxiosConfig]);
+    }, [photo.id]);
 
     useEffect(() => {
         fetchFaces();
@@ -51,13 +53,14 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
         const currentFace = unlabeledFaces[currentFaceIndex];
 
         try {
-            const res = await axios.post(`${baseUrl}/face/label`, {
+            const res = await faceAPI.labelFace({
                 photo_id: photo.id,
                 face_id: currentFace.id,
                 person_name: personName.trim()
-            }, getAxiosConfig());
+            });
 
             if (res.data.status === 'success') {
+                toast.success(`Labeled as ${personName.trim()}`);
                 setPersonName('');
                 await fetchPersons();
 
@@ -68,7 +71,7 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                 }
             }
         } catch (err) {
-            alert("Failed to label face");
+            toast.error("Failed to label face");
         } finally {
             setSubmitting(false);
         }
@@ -128,7 +131,7 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                     <div className="relative inline-block">
                         <img
                             ref={imgRef}
-                            src={`http://localhost:5000/api/dashboard/media/${photo.filename}`}
+                            src={`${API_URL}/dashboard/media/${photo.filename}`}
                             alt="Uploaded"
                             className="max-h-[70vh] object-contain rounded-lg shadow-xl"
                             onLoad={handleImageLoad}

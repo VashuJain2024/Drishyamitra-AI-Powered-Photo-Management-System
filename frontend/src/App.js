@@ -9,24 +9,19 @@ import FolderDetailsPage from './pages/FolderDetailsPage';
 import HistoryPage from './pages/HistoryPage';
 import StatsPage from './pages/StatsPage';
 import { GlobalStateProvider } from './context/GlobalStateContext';
+import { SocketProvider } from './context/SocketContext';
+import { Toaster } from 'react-hot-toast';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 function App() {
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  };
-
-  const [token, setToken] = useState(getCookie('token'));
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [organizing, setOrganizing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const handleLogout = () => {
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    localStorage.removeItem('token');
     setToken(null);
   };
 
@@ -74,31 +69,34 @@ function App() {
 
   return (
     <GlobalStateProvider token={token}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={token ? <Navigate to="/dashboard" /> : <LandingPage />} />
-          <Route path="/auth" element={token ? <Navigate to="/dashboard" /> : <AuthPage onLoginComplete={setToken} />} />
+      <Toaster position="top-right" reverseOrder={false} />
+      <SocketProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={token ? <Navigate to="/dashboard" /> : <LandingPage />} />
+            <Route path="/auth" element={token ? <Navigate to="/dashboard" /> : <AuthPage onLoginComplete={setToken} />} />
 
-          <Route path="/dashboard" element={
-            <DashboardLayout
-              token={token}
-              onLogout={handleLogout}
-              organizing={organizing}
-              onOrganize={handleOrganize}
-              uploading={uploading}
-              onUpload={handleUpload}
-            />
-          }>
-            <Route index element={<GalleryPage />} />
-            <Route path="folders" element={<FoldersPage />} />
-            <Route path="folders/:id" element={<FolderDetailsPage />} />
-            <Route path="history" element={<HistoryPage />} />
-            <Route path="stats" element={<StatsPage />} />
-          </Route>
+            <Route path="/dashboard" element={
+              <DashboardLayout
+                token={token}
+                onLogout={handleLogout}
+                organizing={organizing}
+                onOrganize={handleOrganize}
+                uploading={uploading}
+                onUpload={handleUpload}
+              />
+            }>
+              <Route index element={<GalleryPage />} />
+              <Route path="folders" element={<FoldersPage />} />
+              <Route path="folders/:id" element={<FolderDetailsPage />} />
+              <Route path="history" element={<HistoryPage />} />
+              <Route path="stats" element={<StatsPage />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </BrowserRouter>
+      </SocketProvider>
     </GlobalStateProvider>
   );
 }

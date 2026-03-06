@@ -13,6 +13,10 @@ frontend/npm-debug.log*
 frontend/build_error.txt
 whatsapp-service/dist/
 whatsapp-service/uploads/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Python & Backend
 __pycache__/
@@ -32,6 +36,12 @@ ENV/
 *.egg
 .mypy_cache/
 .python-version
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 backend/*.log
 backend/backend_error.log
 backend/auth.json
@@ -86,6 +96,11 @@ whatsapp-service/.env*
 Thumbs.db
 *.swp
 *.swo
+.project
+.settings/
+.classpath
+.factorypath
+.history/
 
 # Logs
 *.log

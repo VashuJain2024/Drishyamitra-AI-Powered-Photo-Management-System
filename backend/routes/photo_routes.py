@@ -7,7 +7,6 @@ from models.photo import Photo
 from utils.responses import success_response, error_response
 from utils.validation import validate_file_upload
 from datetime import datetime
-from services.tasks import process_photo_faces
 
 photo_bp = Blueprint('photos', __name__)
 
@@ -54,6 +53,7 @@ def upload():
         db.session.commit()
 
         try:
+            from services.tasks import process_photo_faces
             process_photo_faces.delay(photo.id)
         except Exception:
 
@@ -114,7 +114,7 @@ def bulk_upload():
             )
             db.session.add(photo)
             db.session.flush() 
-
+            from services.tasks import process_photo_faces
             process_photo_faces.delay(photo.id)
 
             uploaded_photos.append({
@@ -165,6 +165,8 @@ def delete_photo(photo_id):
     if not photo:
         return error_response("Photo not found or unauthorized", 404)
 
+    current_app.logger.info(f"Attempting to delete photo ID {photo_id} for user {user_id}. Faces in photo: {len(photo.faces)}")
+
     try:
 
         if os.path.exists(photo.filepath):
@@ -176,8 +178,28 @@ def delete_photo(photo_id):
             db.func.json_extract(DeliveryHistory.details, '$.photo_id') == photo.id
         ).delete(synchronize_session=False)
 
+        from models.person import Person
+        from models.face import Face
+
+        person_ids_to_check = list(set([f.person_id for f in photo.faces if f.person_id]))
+        current_app.logger.info(f"Checking for empty persons. Person IDs: {person_ids_to_check}")
+
         db.session.delete(photo)
         db.session.commit()
+
+        for person_id in person_ids_to_check:
+            try:
+                remaining_faces = Face.query.filter_by(person_id=person_id).count()
+                current_app.logger.info(f"Person {person_id} has {remaining_faces} remaining faces.")
+                if remaining_faces == 0:
+                    person = db.session.get(Person, person_id)
+                    if person:
+                        current_app.logger.info(f"Deleting empty person: {person.name} (ID: {person_id})")
+                        db.session.delete(person)
+                        db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Failed to delete empty person {person_id}: {str(e)}")
 
         return success_response(None, "Photo deleted successfully")
     except Exception as e:

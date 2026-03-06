@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { photoAPI, faceAPI } from '../api';
 
 const GlobalStateContext = createContext();
 
@@ -11,18 +11,11 @@ export const GlobalStateProvider = ({ children, token }) => {
     const [activeModal, setActiveModal] = useState(null);
     const [globalLoading, setGlobalLoading] = useState(false);
 
-    const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
-    const getAxiosConfig = useCallback(() => ({
-        headers: { Authorization: `Bearer ${token}` }
-    }), [token]);
-
     const fetchPhotos = useCallback(async () => {
         if (!token) return;
         try {
             setGlobalLoading(true);
-            const res = await axios.get(`${baseUrl}/photos/`, getAxiosConfig());
+            const res = await photoAPI.getPhotos();
             if (res.data.status === 'success') {
                 setPhotos(res.data.data);
             }
@@ -31,19 +24,19 @@ export const GlobalStateProvider = ({ children, token }) => {
         } finally {
             setGlobalLoading(false);
         }
-    }, [token, baseUrl, getAxiosConfig]);
+    }, [token]);
 
     const fetchPersons = useCallback(async () => {
         if (!token) return;
         try {
-            const res = await axios.get(`${baseUrl}/face/persons`, getAxiosConfig());
+            const res = await faceAPI.getPersons();
             if (res.data.status === 'success') {
                 setPersons(res.data.data);
             }
         } catch (error) {
             console.error('Failed to fetch persons:', error);
         }
-    }, [token, baseUrl, getAxiosConfig]);
+    }, [token]);
 
     useEffect(() => {
         if (token) {
@@ -66,9 +59,7 @@ export const GlobalStateProvider = ({ children, token }) => {
         globalLoading,
         fetchPhotos,
         fetchPersons,
-        token,
-        baseUrl,
-        getAxiosConfig
+        token
     };
 
     return (

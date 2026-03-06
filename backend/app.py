@@ -1,13 +1,22 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
+from flask_socketio import SocketIO, join_room
 from config import Config
 from models.database import init_db, db
+from services.socket_service import socketio
 import os
 from datetime import datetime
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 from routes.face_routes import face_bp
+from flask_jwt_extended import JWTManager, decode_token
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+import logging
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 load_dotenv()
 
@@ -17,6 +26,25 @@ def create_app():
     app.config.from_object(Config)
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+    socketio.init_app(app, cors_allowed_origins="*", message_queue=Config.SOCKETIO_MESSAGE_QUEUE)
+
+    @socketio.on('connect')
+    def handle_connect():
+
+        print("Client connected")
+
+    @socketio.on('join')
+    def on_join(data):
+        token = data.get('token')
+        if token:
+            try:
+                decoded = decode_token(token)
+                user_id = decoded['sub']
+                room = f"user_{user_id}"
+                join_room(room)
+                print(f"User {user_id} joined room {room}")
+            except Exception as e:
+                print(f"Join room failed: {e}")
     JWTManager(app)
     from flask_bcrypt import Bcrypt
     Bcrypt(app)
@@ -83,8 +111,8 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(
+    socketio.run(app,
         host='0.0.0.0',
         port=5000,
-        debug=True
+        debug=False
     )

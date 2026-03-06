@@ -1,17 +1,21 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileImage } from 'lucide-react';
+import { UploadCloud, FileImage, Loader2 } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import { photoAPI } from '../api';
+import toast from 'react-hot-toast';
 
 export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }) {
-    const { token, baseUrl, getAxiosConfig } = useGlobalState();
     const fileInputRef = useRef();
     const [isDragging, setIsDragging] = useState(false);
 
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         setUploading(true);
+        setUploadProgress(0);
+
+        const toastId = toast.loading(`Uploading ${files.length} photo(s)... 0%`);
+
         const formData = new FormData();
         const isBulk = files.length > 1;
 
@@ -20,22 +24,29 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
         }
 
         try {
-            const res = await axios.post(`${baseUrl}/photos/${isBulk ? 'bulk_upload' : 'upload'}`, formData, {
-                headers: {
-                    ...getAxiosConfig().headers,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const onProgress = (percent) => {
+                setUploadProgress(percent);
+                toast.loading(`Uploading ${files.length} photo(s)... ${percent}%`, { id: toastId });
+            };
+
+            const res = isBulk
+                ? await photoAPI.bulkUpload(formData, onProgress)
+                : await photoAPI.upload(formData, onProgress);
+
             if (res.data.status === 'success') {
+                toast.success("Upload complete! AI is now processing faces...", { id: toastId });
                 if (onUploadSuccess) {
                     onUploadSuccess(res.data.data || res.data);
                 }
+            } else {
+                toast.error(res.data.message || "Upload failed", { id: toastId });
             }
         } catch (err) {
-            alert("Upload failed");
+            toast.error("Upload failed. Please check connection.", { id: toastId });
             console.error(err);
         } finally {
             setUploading(false);
+            setUploadProgress(0);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };

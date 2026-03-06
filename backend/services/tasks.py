@@ -47,6 +47,7 @@ def process_photo_faces(self, photo_id: int):
         from models.face import Face
         from models.person import Person
         from services.face_recognition import FaceRecognitionService
+        from services.socket_service import SocketService
 
         try:
             photo = Photo.query.get(photo_id)
@@ -146,6 +147,9 @@ def process_photo_faces(self, photo_id: int):
                 f"{len(faces_data)} detected, {faces_stored} stored, "
                 f"matches={matched_names}"
             )
+
+            SocketService.notify_face_processed(photo.user_id, photo.id, faces_stored)
+
             return {
                 "status":         "success",
                 "faces_detected": len(faces_data),

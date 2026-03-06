@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { authAPI } from '../api';
+import toast from 'react-hot-toast';
 
 export default function AuthPage({ onLoginComplete }) {
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState('login'); // 'login' or 'register'
+    const [mode, setMode] = useState('login'); 
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -21,32 +23,28 @@ export default function AuthPage({ onLoginComplete }) {
         e.preventDefault();
         setLoading(true);
 
-        const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-        const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-        const endpoint = mode === 'login' ? 'login' : 'register';
-
         try {
-            const res = await fetch(`${baseUrl}/auth/${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
+            const res = mode === 'login'
+                ? await authAPI.login(formData.username, formData.password)
+                : await authAPI.register(formData);
+
+            const { data } = res;
 
             if (data.status === 'success') {
                 if (mode === 'login') {
-                    document.cookie = `token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
+                    localStorage.setItem('token', data.data.access_token);
+                    toast.success("Welcome back!");
                     onLoginComplete(data.data.access_token);
                     navigate('/dashboard');
                 } else {
-                    alert("Registration successful! Please sign in.");
+                    toast.success("Account created! Please sign in.");
                     setMode('login');
                 }
             } else {
-                alert(data.message || "Authentication failed");
+                toast.error(data.message || "Authentication failed");
             }
         } catch (err) {
-            alert("Auth error. Please check backend connection.");
+            toast.error(err.response?.data?.message || "Auth error. Please check backend connection.");
         } finally {
             setLoading(false);
         }

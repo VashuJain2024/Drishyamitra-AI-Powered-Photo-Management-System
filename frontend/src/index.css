@@ -124,7 +124,7 @@ input {
   padding: 14px 18px;
   border-radius: 14px;
   width: 100%;
-  
+
   font-family: inherit;
   transition: all 0.3s ease;
 }
@@ -154,6 +154,20 @@ input:focus {
   background: var(--text-dim);
 }
 
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite linear;
+}
 
 @keyframes fadeIn {
   from {

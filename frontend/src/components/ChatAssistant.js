@@ -101,7 +101,7 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                         transition={{ duration: 0.3 }}
                         className="bg-slate-800/90 backdrop-blur-xl border border-slate-700 shadow-2xl rounded-3xl w-[380px] h-[550px] flex flex-col mb-4 overflow-hidden relative"
                     >
-                        {}
+                        { }
                         <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex justify-between items-center z-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center border border-primary-500/30 shadow-inner">
@@ -140,7 +140,7 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                         }`}>
                                         <p className="whitespace-pre-wrap">{m.content}</p>
 
-                                        {}
+                                        { }
                                         {m.role === 'bot' && renderMessageData(m.data)}
 
                                         <span className={`text-[9px] mt-2 block opacity-60 ${m.role === 'bot' ? 'text-left' : 'text-right'}`}>
@@ -152,20 +152,25 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
 
                             {loading && (
                                 <motion.div
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
                                     className="flex justify-start"
                                 >
-                                    <div className="bg-slate-700/50 text-slate-400 rounded-2xl rounded-tl-none p-4 text-sm flex gap-1 items-center border border-slate-600/50">
-                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                                    <div className="bg-slate-700/50 backdrop-blur-md rounded-2xl rounded-tl-none p-4 border border-slate-600/50 flex flex-col gap-2 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 via-blue-500/10 to-primary-500/10 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                                        <div className="flex gap-1.5 items-center relative z-10">
+                                            <span className="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" />
+                                        </div>
+                                        <span className="text-[10px] font-bold tracking-widest text-primary-400 uppercase opacity-70 animate-pulse relative z-10">Drishyamitra is thinking</span>
                                     </div>
                                 </motion.div>
                             )}
                             <div ref={messagesEndRef} className="h-2" />
                         </div>
 
-                        {}
+                        { }
                         <form onSubmit={onSendMessage} className="p-3 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700 z-10 flex gap-2 items-center">
                             <button
                                 type="button"

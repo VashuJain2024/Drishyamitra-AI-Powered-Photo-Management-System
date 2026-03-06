@@ -5,10 +5,12 @@ import { motion } from 'framer-motion';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { Search, Filter, SortDesc, Calendar } from 'lucide-react';
 import Loader from '../components/Loader';
+import { deliveryAPI, photoAPI } from '../api';
+import toast from 'react-hot-toast';
 
 export default function GalleryPage() {
     const { waStatus } = useOutletContext();
-    const { photos, globalLoading, token, baseUrl, fetchPhotos, setActiveModal } = useGlobalState();
+    const { photos, globalLoading, fetchPhotos, setActiveModal } = useGlobalState();
 
     const [waQr, setWaQr] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,16 +47,15 @@ export default function GalleryPage() {
         if (message === null) return;
 
         try {
-            const res = await fetch(`${baseUrl}/delivery/share/whatsapp`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photo_id: photoId, recipient, message })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                alert("Enqueued for WhatsApp delivery!");
-            } else alert(data.message || "Sharing failed");
-        } catch (err) { alert("Network error."); }
+            const res = await deliveryAPI.shareWhatsApp({ photo_id: photoId, recipient, message });
+            if (res.data.status === 'success') {
+                toast.success("Enqueued for WhatsApp delivery!");
+            } else {
+                toast.error(res.data.message || "Sharing failed");
+            }
+        } catch (err) {
+            toast.error("Network error during sharing.");
+        }
     };
 
     const handleEmailShare = async (photoId) => {
@@ -64,33 +65,31 @@ export default function GalleryPage() {
         if (body === null) return;
 
         try {
-            const res = await fetch(`${baseUrl}/delivery/share/email`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photo_id: photoId, recipient, body })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                alert("Email dispatched successfully!");
-            } else alert(data.message || "Email failed");
-        } catch (err) { alert("Network error."); }
+            const res = await deliveryAPI.shareEmail({ photo_id: photoId, recipient, body });
+            if (res.data.status === 'success') {
+                toast.success("Email dispatched successfully!");
+            } else {
+                toast.error(res.data.message || "Email failed");
+            }
+        } catch (err) {
+            toast.error("Network error during sharing.");
+        }
     };
 
     const handlePhotoDelete = async (photoId) => {
         if (!window.confirm("Are you sure you want to permanently delete this photo? This will also remove all associated AI face data and sharing history.")) return;
 
         try {
-            const res = await fetch(`${baseUrl}/photos/${photoId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (res.ok && data.status === 'success') {
+            const res = await photoAPI.delete(photoId);
+            if (res.data.status === 'success') {
+                toast.success("Photo deleted");
                 fetchPhotos();
             } else {
-                alert(data.message || "Failed to delete photo");
+                toast.error(res.data.message || "Failed to delete photo");
             }
-        } catch (err) { alert("Network error while deleting photo."); }
+        } catch (err) {
+            toast.error("Network error while deleting photo.");
+        }
     };
 
     const processedPhotos = useMemo(() => {

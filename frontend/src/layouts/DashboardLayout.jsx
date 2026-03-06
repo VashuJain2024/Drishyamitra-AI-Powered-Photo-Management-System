@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { Zap } from 'lucide-react';
@@ -8,6 +7,8 @@ import { useGlobalState } from '../context/GlobalStateContext';
 import PhotoUpload from '../components/PhotoUpload';
 import FaceLabelingModal from '../components/FaceLabelingModal';
 import PhotoModal from '../components/PhotoModal';
+import { chatAPI } from '../api';
+import toast from 'react-hot-toast';
 
 export default function DashboardLayout({ token, onLogout, organizing, onOrganize, uploading, onUpload }) {
     const navigate = useNavigate();
@@ -60,8 +61,9 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
         try {
             setWaStatus({ ready: false, status: 'Resetting...' });
             await fetch(`http://localhost:3001/reset`, { method: 'POST' });
-
+            toast.success("WhatsApp service reset triggered");
         } catch (err) {
+            toast.error("Failed to reset WhatsApp");
             console.error("Failed to reset WhatsApp", err);
         }
     };
@@ -72,45 +74,36 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
         const messageToSend = forcedText || chatInput;
         if (!messageToSend.trim()) return;
 
-        const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-        const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
-        const newMsg = { role: 'user', content: messageToSend };
+        const newMsg = { role: 'user', content: messageToSend, timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, newMsg]);
         setChatInput('');
         setChatLoading(true);
 
         try {
-            const res = await axios.post(
-                `${baseUrl}/chat/`,
-                {
-                    message: newMsg.content,
-                    history: messages.slice(-5)
-                },
-                {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }
-            );
+            const res = await chatAPI.sendMessage(messageToSend, messages.slice(-5));
 
             if (res.data.status === 'success') {
                 setMessages(prev => [...prev, {
                     role: 'bot',
                     content: res.data.data.response,
-                    data: res.data.data.data
+                    data: res.data.data.data,
+                    timestamp: new Date().toISOString()
                 }]);
             } else {
-                throw new Error("API returned failure");
+                throw new Error(res.data.message || "API failure");
             }
         } catch (err) {
             console.error(err);
+            toast.error("Chat service is being slow, please wait...");
             setMessages(prev => [...prev, {
                 role: 'bot',
-                content: "I'm having trouble connecting to the server. Please try again later."
+                content: "I'm having trouble connecting to the server. Please try again later.",
+                timestamp: new Date().toISOString()
             }]);
         } finally {
             setChatLoading(false);
         }
-    }, [chatInput, messages, token]);
+    }, [chatInput, messages]);
 
     return (
         <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
@@ -168,6 +161,7 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                 onInputChange={setChatInput}
                 onSendMessage={handleSendMessage}
                 loading={chatLoading}
+                onLogout={onLogout}
             />
 
             {activeModal?.type === 'label' && (

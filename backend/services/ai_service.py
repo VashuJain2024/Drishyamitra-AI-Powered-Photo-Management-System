@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        self._client = None
         self.model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
         self.system_prompt = """
@@ -49,6 +49,15 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
 - NEVER mention "JSON" or "intents" to the user.
 """
 
+    @property
+    def client(self):
+        if self._client is None:
+            api_key = os.environ.get("GROQ_API_KEY")
+            if not api_key:
+                raise ValueError("GROQ_API_KEY is not set")
+            self._client = Groq(api_key=api_key)
+        return self._client
+
     def _generate_final_response(self, user_query, action_result):
         messages = [
             {
@@ -62,7 +71,8 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
         ]
 
         try:
-            completion = self.client.chat.completions.create(
+            client = self.client
+            completion = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.7,
@@ -115,7 +125,8 @@ Assistant: "Hello! I am Drishyamitra, your AI photo assistant. How can I help yo
         })
 
         try:
-            completion = self.client.chat.completions.create(
+            client = self.client
+            completion = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.3,

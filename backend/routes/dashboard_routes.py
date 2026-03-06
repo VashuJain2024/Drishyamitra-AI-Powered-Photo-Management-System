@@ -18,11 +18,20 @@ def get_stats():
     person_count = Person.query.filter_by(user_id=user_id).count()
     history_count = DeliveryHistory.query.filter_by(user_id=user_id).count()
 
-    return success_response({
+    recognized_faces_count = Face.query.join(Photo).filter(
+        Photo.user_id == user_id,
+        Face.person_id.isnot(None)
+    ).count()
+
+    stats_data = {
         "photo_count": photo_count,
         "person_count": person_count,
-        "history_count": history_count
-    })
+        "history_count": history_count,
+        "recognized_faces_count": recognized_faces_count
+    }
+    current_app.logger.info(f"Dashboard Stats for user {user_id}: {stats_data}")
+
+    return success_response(stats_data)
 
 @dashboard_bp.route('/folders', methods=['GET'])
 @jwt_required()
