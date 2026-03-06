@@ -11,20 +11,16 @@ import StatsPage from './pages/StatsPage';
 import { GlobalStateProvider } from './context/GlobalStateContext';
 import { SocketProvider } from './context/SocketContext';
 import { Toaster } from 'react-hot-toast';
-
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [organizing, setOrganizing] = useState(false);
   const [uploading, setUploading] = useState(false);
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     setToken(null);
   };
-
   const handleOrganize = async () => {
     setOrganizing(true);
     try {
@@ -42,7 +38,6 @@ function App() {
       setOrganizing(false);
     }
   };
-
   const handleUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -60,13 +55,11 @@ function App() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-
         alert("Upload completed successfully!");
       }
     } catch (err) { alert("Upload failed"); }
     finally { setUploading(false); }
   };
-
   return (
     <GlobalStateProvider token={token}>
       <Toaster position="top-right" reverseOrder={false} />
@@ -75,7 +68,6 @@ function App() {
           <Routes>
             <Route path="/" element={token ? <Navigate to="/dashboard" /> : <LandingPage />} />
             <Route path="/auth" element={token ? <Navigate to="/dashboard" /> : <AuthPage onLoginComplete={setToken} />} />
-
             <Route path="/dashboard" element={
               <DashboardLayout
                 token={token}
@@ -92,7 +84,6 @@ function App() {
               <Route path="history" element={<HistoryPage />} />
               <Route path="stats" element={<StatsPage />} />
             </Route>
-
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </BrowserRouter>
@@ -100,6 +91,4 @@ function App() {
     </GlobalStateProvider>
   );
 }
-
 export default App;
-

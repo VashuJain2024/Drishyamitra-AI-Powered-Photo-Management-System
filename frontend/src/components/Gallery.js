@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Mail, ImageIcon, Trash2 } from 'lucide-react';
-
 export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhotoDelete, onPhotoClick }) {
     if (photos.length === 0) {
         return (
@@ -11,7 +10,6 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
             </div>
         );
     }
-
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             <AnimatePresence>
@@ -35,7 +33,6 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                                 loading="lazy"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                             />
-
                             {/* Recognized Faces Badges */}
                             {p.faces && p.faces.length > 0 && (
                                 <div className="absolute top-2 left-2 flex -space-x-2 z-10 transition-transform duration-300">
@@ -51,7 +48,6 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                                     )}
                                 </div>
                             )}
-
                             {/* Hover Overlay with Action Buttons */}
                             <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
                                 <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300 pointer-events-auto">
@@ -77,7 +73,6 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                                 </div>
                             </div>
                         </div>
-
                         { }
                         <div className="p-4">
                             <p className="text-sm font-medium text-slate-200 truncate" title={p.filename}>

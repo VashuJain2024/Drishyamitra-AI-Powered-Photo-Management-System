@@ -35,30 +35,43 @@ def chat():
     data = request.get_json()
     user_message = data.get('message')
     history = data.get('history', [])
-
+    
     try:
-
         ai_response_obj = ai_service.get_response(user_message, history, user_id=user_id)
-
+        
         if isinstance(ai_response_obj, dict):
             ai_response = ai_response_obj.get("response", "")
             action_data = ai_response_obj.get("data", None)
         else:
             ai_response = ai_response_obj
             action_data = None
-
+            
         is_fallback = "trouble connecting" in ai_response.lower() or "unrecognised intent" in ai_response.lower()
+        
         threading.Thread(
             target=log_chat_async,
             args=(current_app._get_current_object(), user_id, user_message, ai_response, is_fallback)
         ).start()
-
+        
         return success_response({
             "response": ai_response,
             "data": action_data,
             "timestamp": datetime.utcnow().isoformat()
         }, message="AI response generated successfully")
-
     except Exception as e:
         current_app.logger.error(f"Chat Route Error: {e}")
         return error_response(message=f"Failed to generate AI response: {str(e)}", status_code=500)
+
+@chat_bp.route('/clear', methods=['DELETE'])
+@jwt_required()
+def clear_chat():
+    """Clear chat history for the current user"""
+    user_id = get_jwt_identity()
+    try:
+        ChatLog.query.filter_by(user_id=user_id).delete()
+        db.session.commit()
+        return success_response(message="Chat history cleared successfully")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to clear chat: {e}")
+        return error_response(message=f"Failed to clear chat: {str(e)}", status_code=500)

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock } from 'lucide-react';
-
 export default function HistoryTable({ data }) {
     const getStatusInfo = (status) => {
         if (!status) return { text: 'Pending', color: 'text-amber-500', bg: 'bg-amber-500/10', icon: Clock };
@@ -14,7 +13,6 @@ export default function HistoryTable({ data }) {
         }
         return { text: 'Pending', color: 'text-amber-500', bg: 'bg-amber-500/10', icon: Clock };
     };
-
     return (
         <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-3xl shadow-xl overflow-hidden">
             <div className="overflow-x-auto">
@@ -39,7 +37,6 @@ export default function HistoryTable({ data }) {
                             data.map((item, idx) => {
                                 const statusInfo = getStatusInfo(item.details?.status);
                                 const StatusIcon = statusInfo.icon;
-
                                 return (
                                     <motion.tr
                                         key={item.id}

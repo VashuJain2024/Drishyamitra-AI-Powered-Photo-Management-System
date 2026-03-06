@@ -1,6 +1,5 @@
 from celery import Celery
 from config import Config
-
 def make_celery(app_name=__name__):
     celery = Celery(
         app_name,
@@ -20,5 +19,4 @@ def make_celery(app_name=__name__):
         }
     })
     return celery
-
 celery = make_celery()

@@ -1,16 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { photoAPI, faceAPI } from '../api';
-
 const GlobalStateContext = createContext();
-
 export const useGlobalState = () => useContext(GlobalStateContext);
-
 export const GlobalStateProvider = ({ children, token }) => {
     const [photos, setPhotos] = useState([]);
     const [persons, setPersons] = useState([]);
     const [activeModal, setActiveModal] = useState(null);
     const [globalLoading, setGlobalLoading] = useState(false);
-
     const fetchPhotos = useCallback(async () => {
         if (!token) return;
         try {
@@ -25,7 +21,6 @@ export const GlobalStateProvider = ({ children, token }) => {
             setGlobalLoading(false);
         }
     }, [token]);
-
     const fetchPersons = useCallback(async () => {
         if (!token) return;
         try {
@@ -37,7 +32,6 @@ export const GlobalStateProvider = ({ children, token }) => {
             console.error('Failed to fetch persons:', error);
         }
     }, [token]);
-
     useEffect(() => {
         if (token) {
             fetchPhotos();
@@ -48,7 +42,6 @@ export const GlobalStateProvider = ({ children, token }) => {
             setActiveModal(null);
         }
     }, [token, fetchPhotos, fetchPersons]);
-
     const value = {
         photos,
         setPhotos,
@@ -61,7 +54,6 @@ export const GlobalStateProvider = ({ children, token }) => {
         fetchPersons,
         token
     };
-
     return (
         <GlobalStateContext.Provider value={value}>
             {children}

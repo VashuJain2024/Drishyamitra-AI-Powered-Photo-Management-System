@@ -1,44 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Bot, Mic, MicOff, ImageIcon } from 'lucide-react';
-
-export default function ChatAssistant({ messages, isOpen, onToggle, input, onInputChange, onSendMessage, loading }) {
+import { MessageSquare, X, Send, Bot, Mic, MicOff, ImageIcon, Trash2 } from 'lucide-react';
+export default function ChatAssistant({ messages, isOpen, onToggle, input, onInputChange, onSendMessage, loading, onClearHistory }) {
     const messagesEndRef = useRef(null);
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef(null);
-
     useEffect(() => {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
             recognitionRef.current.interimResults = false;
-
             recognitionRef.current.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 const newText = input + (input ? ' ' : '') + transcript;
                 onInputChange(newText);
                 setIsListening(false);
-
                 setTimeout(() => {
                     if (onSendMessage) {
-
                         onSendMessage({ preventDefault: () => { } }, newText);
                     }
                 }, 100);
             };
-
             recognitionRef.current.onerror = (event) => {
                 console.error("Speech recognition error", event.error);
                 setIsListening(false);
             };
-
             recognitionRef.current.onend = () => {
                 setIsListening(false);
             };
         }
     }, [input, onInputChange, onSendMessage]);
-
     const toggleListening = () => {
         if (isListening) {
             recognitionRef.current?.stop();
@@ -52,20 +44,16 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
             }
         }
     };
-
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
-
     useEffect(() => {
         if (isOpen) {
             scrollToBottom();
         }
     }, [messages, isOpen, loading]);
-
     const renderMessageData = (data) => {
         if (!data) return null;
-
         if (data.type === 'photos' && data.photos && data.photos.length > 0) {
             return (
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -89,7 +77,6 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
         }
         return null;
     };
-
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             <AnimatePresence>
@@ -117,14 +104,24 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                     </p>
                                 </div>
                             </div>
-                            <button
-                                onClick={onToggle}
-                                className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={onClearHistory}
+                                    type="button"
+                                    title="Clear chat history"
+                                    className="text-slate-400 hover:text-rose-400 p-2 rounded-full hover:bg-rose-500/10 transition-all"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={onToggle}
+                                    type="button"
+                                    className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
-
                         {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-5 relative z-0">
                             {messages.map((m, i) => (
@@ -139,17 +136,14 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                         : 'bg-primary-600 text-white rounded-tr-none'
                                         }`}>
                                         <p className="whitespace-pre-wrap">{m.content}</p>
-
                                         { }
                                         {m.role === 'bot' && renderMessageData(m.data)}
-
                                         <span className={`text-[9px] mt-2 block opacity-60 ${m.role === 'bot' ? 'text-left' : 'text-right'}`}>
                                             {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                                         </span>
                                     </div>
                                 </motion.div>
                             ))}
-
                             {loading && (
                                 <motion.div
                                     initial={{ opacity: 0, x: -10 }}
@@ -169,7 +163,6 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                             )}
                             <div ref={messagesEndRef} className="h-2" />
                         </div>
-
                         { }
                         <form onSubmit={onSendMessage} className="p-3 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700 z-10 flex gap-2 items-center">
                             <button
@@ -181,7 +174,6 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                             >
                                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
-
                             <input
                                 type="text"
                                 placeholder={isListening ? "Listening..." : "Ask me anything..."}
@@ -189,7 +181,6 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                 onChange={(e) => onInputChange(e.target.value)}
                                 className="flex-1 bg-slate-800 border border-slate-600 rounded-full px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all placeholder-slate-400"
                             />
-
                             <button
                                 type="submit"
                                 disabled={loading || !input.trim()}
@@ -201,7 +192,6 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                     </motion.div>
                 )}
             </AnimatePresence>
-
             <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

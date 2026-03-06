@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Mail, Edit3, ArrowLeft } from 'lucide-react';
 import Gallery from './Gallery';
-
 export default function FolderDetails({
     folder,
     photos,
@@ -16,7 +15,6 @@ export default function FolderDetails({
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(folder.name);
-
     const handleRenameSubmit = (e) => {
         e.preventDefault();
         if (newName.trim() && newName !== folder.name) {
@@ -24,12 +22,10 @@ export default function FolderDetails({
         }
         setIsEditing(false);
     };
-
     return (
         <div className="space-y-8 pb-10">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 bg-slate-800/40 border border-slate-700 p-8 rounded-3xl shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-[80px] pointer-events-none" />
-
                 <div className="flex flex-col gap-6 z-10 w-full md:w-auto">
                     <button
                         onClick={onBack}
@@ -38,7 +34,6 @@ export default function FolderDetails({
                         <ArrowLeft className="w-4 h-4" />
                         Back to Folders
                     </button>
-
                     <div className="flex flex-col gap-2">
                         <AnimatePresence mode="wait">
                             {isEditing ? (
@@ -92,7 +87,6 @@ export default function FolderDetails({
                         </p>
                     </div>
                 </div>
-
                 <div className="flex flex-col sm:flex-row gap-3 z-10 w-full md:w-auto">
                     <button
                         onClick={() => onWhatsAppShare(folder.id)}
@@ -110,7 +104,6 @@ export default function FolderDetails({
                     </button>
                 </div>
             </div>
-
             <div className="bg-slate-800/40 border border-slate-700 p-6 md:p-10 rounded-3xl shadow-xl">
                 <Gallery
                     photos={photos}

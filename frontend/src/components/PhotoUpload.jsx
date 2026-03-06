@@ -1,38 +1,30 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileImage, Loader2 } from 'lucide-react';
-import { useGlobalState } from '../context/GlobalStateContext';
+import { UploadCloud, FileImage } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { photoAPI } from '../api';
 import toast from 'react-hot-toast';
-
 export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }) {
     const fileInputRef = useRef();
     const [isDragging, setIsDragging] = useState(false);
-
+    const [, setUploadProgress] = useState(0);
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         setUploading(true);
         setUploadProgress(0);
-
         const toastId = toast.loading(`Uploading ${files.length} photo(s)... 0%`);
-
         const formData = new FormData();
         const isBulk = files.length > 1;
-
         for (let i = 0; i < files.length; i++) {
             formData.append(isBulk ? 'photos' : 'photo', files[i]);
         }
-
         try {
             const onProgress = (percent) => {
                 setUploadProgress(percent);
                 toast.loading(`Uploading ${files.length} photo(s)... ${percent}%`, { id: toastId });
             };
-
             const res = isBulk
                 ? await photoAPI.bulkUpload(formData, onProgress)
                 : await photoAPI.upload(formData, onProgress);
-
             if (res.data.status === 'success') {
                 toast.success("Upload complete! AI is now processing faces...", { id: toastId });
                 if (onUploadSuccess) {
@@ -50,27 +42,22 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
-
     const handleFileSelect = (e) => {
         processFiles(e.target.files);
     };
-
     const handleDragOver = (e) => {
         e.preventDefault();
         setIsDragging(true);
     };
-
     const handleDragLeave = (e) => {
         e.preventDefault();
         setIsDragging(false);
     };
-
     const handleDrop = (e) => {
         e.preventDefault();
         setIsDragging(false);
         processFiles(e.dataTransfer.files);
     };
-
     return (
         <div
             className="relative"
@@ -93,7 +80,6 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
                 onChange={handleFileSelect}
                 className="absolute inset-0 opacity-0 cursor-pointer"
             />
-
             <AnimatePresence>
                 {isDragging && (
                     <motion.div

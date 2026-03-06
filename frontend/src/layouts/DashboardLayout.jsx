@@ -9,7 +9,6 @@ import FaceLabelingModal from '../components/FaceLabelingModal';
 import PhotoModal from '../components/PhotoModal';
 import { chatAPI } from '../api';
 import toast from 'react-hot-toast';
-
 export default function DashboardLayout({ token, onLogout, organizing, onOrganize, uploading, onUpload }) {
     const navigate = useNavigate();
     const location = useLocation();
@@ -30,11 +29,9 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
     });
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
-
     useEffect(() => {
         localStorage.setItem('chatHistory', JSON.stringify(messages));
     }, [messages]);
-
     const fetchWhatsAppStatus = useCallback(async () => {
         try {
             const res = await fetch(`http://localhost:3001/status`);
@@ -44,7 +41,6 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
             setWaStatus({ ready: false, status: 'Offline' });
         }
     }, []);
-
     useEffect(() => {
         if (!token) {
             navigate('/auth');
@@ -53,9 +49,7 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
         const interval = setInterval(fetchWhatsAppStatus, 5000);
         fetchWhatsAppStatus();
         return () => clearInterval(interval);
-
     }, [token, navigate, fetchWhatsAppStatus]);
-
     const handleWhatsAppReset = async () => {
         if (!window.confirm("Are you sure you want to disconnect WhatsApp and generate a new QR code?")) return;
         try {
@@ -67,21 +61,29 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
             console.error("Failed to reset WhatsApp", err);
         }
     };
-
+    const handleClearChat = useCallback(async () => {
+        if (!window.confirm("Are you sure you want to clear your chat history?")) return;
+        try {
+            await chatAPI.clearHistory();
+            const initialMsg = [{ role: 'bot', content: 'Hello! I am Drishyamitra AI. How can I help you manage your photos today?', timestamp: new Date().toISOString() }];
+            setMessages(initialMsg);
+            localStorage.setItem('chatHistory', JSON.stringify(initialMsg));
+            toast.success("Chat history cleared");
+        } catch (err) {
+            toast.error("Failed to clear chat history");
+            console.error(err);
+        }
+    }, []);
     const handleSendMessage = useCallback(async (e, forcedText = null) => {
         if (e && e.preventDefault) e.preventDefault();
-
         const messageToSend = forcedText || chatInput;
         if (!messageToSend.trim()) return;
-
         const newMsg = { role: 'user', content: messageToSend, timestamp: new Date().toISOString() };
         setMessages(prev => [...prev, newMsg]);
         setChatInput('');
         setChatLoading(true);
-
         try {
             const res = await chatAPI.sendMessage(messageToSend, messages.slice(-5));
-
             if (res.data.status === 'success') {
                 setMessages(prev => [...prev, {
                     role: 'bot',
@@ -104,7 +106,6 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
             setChatLoading(false);
         }
     }, [chatInput, messages]);
-
     return (
         <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
             <Sidebar
@@ -114,7 +115,6 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                 waStatus={waStatus}
                 onResetWhatsApp={handleWhatsAppReset}
             />
-
             <div className="flex-1 flex flex-col relative pb-8">
                 <header className="h-20 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-10 sticky top-0">
                     <div>
@@ -142,17 +142,14 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                         />
                     </div>
                 </header>
-
                 <main className="flex-1 overflow-y-auto p-8 relative">
                     {/* Decorative background gradients */}
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-900/10 rounded-full blur-[120px] pointer-events-none" />
-
                     <div className="max-w-7xl mx-auto relative z-10 h-full">
                         <Outlet context={{ token, waStatus }} />
                     </div>
                 </main>
             </div>
-
             <ChatAssistant
                 messages={messages}
                 isOpen={chatOpen}
@@ -160,10 +157,10 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                 input={chatInput}
                 onInputChange={setChatInput}
                 onSendMessage={handleSendMessage}
+                onClearHistory={handleClearChat}
                 loading={chatLoading}
                 onLogout={onLogout}
             />
-
             {activeModal?.type === 'label' && (
                 <FaceLabelingModal
                     photo={activeModal.photo}
@@ -174,7 +171,6 @@ export default function DashboardLayout({ token, onLogout, organizing, onOrganiz
                     }}
                 />
             )}
-
             {activeModal?.type === 'photo' && (
                 <PhotoModal
                     photo={activeModal.payload}

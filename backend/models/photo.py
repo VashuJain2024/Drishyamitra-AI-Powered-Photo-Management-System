@@ -1,9 +1,7 @@
 from models.database import db
 from datetime import datetime
-
 class Photo(db.Model):
     __tablename__ = 'photos'
-
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(256), nullable=False)
     filepath = db.Column(db.String(512), nullable=False)
@@ -11,9 +9,7 @@ class Photo(db.Model):
     upload_date = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     size = db.Column(db.Integer) 
     mime_type = db.Column(db.String(64))
-
     faces = db.relationship('Face', backref='photo', lazy=True, cascade="all, delete-orphan")
-
     def to_dict(self):
         return {
             "id": self.id,

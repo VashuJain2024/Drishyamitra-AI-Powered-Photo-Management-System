@@ -1,20 +1,15 @@
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
 export default function ActivityChart({ historyData }) {
-
     const chartData = useMemo(() => {
         if (!historyData || historyData.length === 0) return [];
-
         const countsByDate = {};
-
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
             const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
             countsByDate[dateStr] = { date: dateStr, WhatsApp: 0, Email: 0, Total: 0 };
         }
-
         historyData.forEach(item => {
             const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
             if (countsByDate[dateStr]) {
@@ -27,10 +22,8 @@ export default function ActivityChart({ historyData }) {
                 countsByDate[dateStr].Total += 1;
             }
         });
-
         return Object.values(countsByDate);
     }, [historyData]);
-
     if (chartData.length === 0) {
         return (
             <div className="h-64 flex items-center justify-center text-slate-400">
@@ -38,7 +31,6 @@ export default function ActivityChart({ historyData }) {
             </div>
         );
     }
-
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
@@ -56,7 +48,6 @@ export default function ActivityChart({ historyData }) {
         }
         return null;
     };
-
     return (
         <div className="h-80 w-full mt-6">
             <ResponsiveContainer width="100%" height="100%">

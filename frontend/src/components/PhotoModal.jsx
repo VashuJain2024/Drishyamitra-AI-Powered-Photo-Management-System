@@ -1,17 +1,14 @@
 import React from 'react';
 import { X, Calendar, FileType, HardDrive } from 'lucide-react';
 import { motion } from 'framer-motion';
-
 export default function PhotoModal({ photo, onClose }) {
     if (!photo) return null;
-
     const formatSize = (bytes) => {
         if (!bytes) return 'Unknown size';
         if (bytes < 1024) return bytes + ' B';
         else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
         else return (bytes / 1048576).toFixed(1) + ' MB';
     };
-
     return (
         <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8">
             <button
@@ -20,7 +17,6 @@ export default function PhotoModal({ photo, onClose }) {
             >
                 <X className="w-6 h-6" />
             </button>
-
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -35,11 +31,9 @@ export default function PhotoModal({ photo, onClose }) {
                         className="max-w-full max-h-[85vh] object-contain shadow-2xl drop-shadow-2xl"
                     />
                 </div>
-
                 {}
                 <div className="w-full md:w-1/4 bg-slate-800 flex flex-col p-6 overflow-y-auto border-l border-slate-700/50">
                     <h3 className="text-xl font-bold text-white mb-6">Photo Details</h3>
-
                     <div className="space-y-6">
                         {/* Meta Data */}
                         <div className="space-y-4">
@@ -50,7 +44,6 @@ export default function PhotoModal({ photo, onClose }) {
                                     <p className="text-xs text-slate-500">Filename</p>
                                 </div>
                             </div>
-
                             <div className="flex items-start gap-3">
                                 <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
                                 <div>
@@ -60,7 +53,6 @@ export default function PhotoModal({ photo, onClose }) {
                                     <p className="text-xs text-slate-500">Upload Date</p>
                                 </div>
                             </div>
-
                             <div className="flex items-start gap-3">
                                 <HardDrive className="w-5 h-5 text-slate-400 mt-0.5" />
                                 <div>
@@ -69,15 +61,12 @@ export default function PhotoModal({ photo, onClose }) {
                                 </div>
                             </div>
                         </div>
-
                         <div className="w-full h-px bg-slate-700/50 my-6" />
-
                         {/* People in photo */}
                         <div>
                             <h4 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">
                                 People in this photo
                             </h4>
-
                             {!photo.faces || photo.faces.length === 0 ? (
                                 <p className="text-sm text-slate-500 italic bg-slate-900/40 p-3 rounded-xl border border-slate-800">
                                     No faces detected by AI.

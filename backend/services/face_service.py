@@ -4,23 +4,18 @@ FaceService
 Thin orchestration layer above FaceRecognitionService.
 All heavy inference is delegated to FaceRecognitionService to avoid duplication.
 """
-
 import os
 import threading
 import logging
 from models.database import db
 from models.face import Face
-
 logger = logging.getLogger(__name__)
-
 class FaceService:
-
     @staticmethod
     def detect_and_store_faces(photo_id: int, image_path: str, user_id: int) -> list:
         """
         Run the full Facenet512/RetinaFace/MTCNN pipeline on *image_path*,
         store results in the DB, and return the created Face objects.
-
         Steps
         -----
         1. detect_and_extract_faces  – RetinaFace detection + Facenet512 embeds
@@ -30,44 +25,34 @@ class FaceService:
         5. Persist Face records     – bounding box, embedding, landmarks, confidence
         """
         from services.face_recognition import FaceRecognitionService
-
         service = FaceRecognitionService()
-
         faces_data = service.detect_and_extract_faces(image_path)
         if not faces_data:
             logger.info(f"No faces found in photo {photo_id} at {image_path}")
             return []
-
         landmark_data = service.extract_faces_with_landmarks(image_path)
         landmark_map = {}  
         for idx, lm in enumerate(landmark_data):
             landmark_map[idx] = lm.get("landmarks", {})
-
         faces_created = []
-
         try:
             for idx, face_info in enumerate(faces_data):
                 embedding    = face_info.get("embedding")
                 facial_area  = face_info.get("facial_area", {})
                 confidence   = face_info.get("face_confidence", face_info.get("confidence", 0.0))
                 landmarks    = landmark_map.get(idx, {})
-
                 bbox = [
                     facial_area.get("x", 0),
                     facial_area.get("y", 0),
                     facial_area.get("w", 0),
                     facial_area.get("h", 0),
                 ]
-
                 if not embedding:
                     logger.warning(f"Empty embedding for face #{idx} in photo {photo_id} — skipping")
                     continue
-
                 matched_person, scores = service.match_face(embedding, user_id)
-
                 if matched_person is None:
                     matched_person = service.auto_create_person(user_id)
-
                 face = Face(
                     photo_id      = photo_id,
                     person_id     = matched_person.id,
@@ -79,9 +64,7 @@ class FaceService:
                 )
                 db.session.add(face)
                 faces_created.append(face)
-
             db.session.commit()
-
             service.invalidate_cache(user_id)
             logger.info(
                 f"Stored {len(faces_created)} face(s) for photo {photo_id} "
@@ -91,16 +74,13 @@ class FaceService:
             db.session.rollback()
             logger.error(f"DB error storing faces for photo {photo_id}: {exc}")
             raise
-
         return faces_created
-
     @staticmethod
     def process_photo_async(app, photo_id: int, image_path: str, user_id: int) -> None:
         """Trigger Celery task for face processing."""
         from services.tasks import process_photo_faces
         process_photo_faces.delay(photo_id)
         logger.info(f"Celery task queued for photo {photo_id}")
-
     @staticmethod
     def get_faces_for_photo(photo_id: int) -> list:
         return Face.query.filter_by(photo_id=photo_id).all()

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Image, Folder, History, BarChart2, LogOut } from 'lucide-react';
-
 export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, onResetWhatsApp }) {
     const menuItems = [
         { id: '/dashboard', label: 'Gallery', icon: Image },
@@ -9,7 +8,6 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
         { id: '/dashboard/history', label: 'Delivery History', icon: History },
         { id: '/dashboard/stats', label: 'Analytics', icon: BarChart2 },
     ];
-
     return (
         <aside className="w-64 bg-slate-900/80 backdrop-blur-xl border-r border-slate-800 flex flex-col h-full z-20">
             <div className="p-8">
@@ -20,7 +18,6 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
                     Drishyamitra<span className="text-primary-500">AI</span>
                 </button>
             </div>
-
             <nav className="flex-1 px-4 space-y-2">
                 {menuItems.map((item) => {
                     const isActive = currentPath === item.id || (item.id !== '/dashboard' && currentPath.startsWith(item.id));
@@ -46,7 +43,6 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
                     );
                 })}
             </nav>
-
             <div className="p-4 mt-auto">
                 <div className="p-4 mb-4 rounded-2xl bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center justify-between mb-1">
@@ -66,7 +62,6 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
                     </div>
                     <p className="text-xs text-slate-400 truncate">{waStatus.status}</p>
                 </div>
-
                 <button
                     onClick={onLogout}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"

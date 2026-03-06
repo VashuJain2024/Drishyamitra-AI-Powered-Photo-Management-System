@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { authAPI } from '../api';
 import toast from 'react-hot-toast';
-
 export default function AuthPage({ onLoginComplete }) {
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState('login'); 
@@ -14,22 +13,17 @@ export default function AuthPage({ onLoginComplete }) {
         password: ''
     });
     const navigate = useNavigate();
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         try {
             const res = mode === 'login'
                 ? await authAPI.login(formData.username, formData.password)
                 : await authAPI.register(formData);
-
             const { data } = res;
-
             if (data.status === 'success') {
                 if (mode === 'login') {
                     localStorage.setItem('token', data.data.access_token);
@@ -49,13 +43,11 @@ export default function AuthPage({ onLoginComplete }) {
             setLoading(false);
         }
     };
-
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
             { }
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary-600/20 rounded-full blur-[100px]" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]" />
-
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -70,7 +62,6 @@ export default function AuthPage({ onLoginComplete }) {
                         {mode === 'login' ? 'Manage your memories' : 'Start organizing your photos with AI'}
                     </p>
                 </div>
-
                 <form onSubmit={handleAuth} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-400 mb-2">Username</label>
@@ -118,7 +109,6 @@ export default function AuthPage({ onLoginComplete }) {
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (mode === 'login' ? 'Secure Sign In' : 'Create Account')}
                     </button>
                 </form>
-
                 <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
                     <button
                         onClick={() => setMode(mode === 'login' ? 'register' : 'login')}

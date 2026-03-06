@@ -3,27 +3,25 @@ import { useOutletContext } from 'react-router-dom';
 import HistoryTable from '../components/HistoryTable';
 import { motion } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
 export default function HistoryPage() {
     const { token } = useOutletContext();
     const [historyData, setHistoryData] = useState([]);
 
-    const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
     useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await fetch(`${baseUrl}/history/`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.status === 'success') setHistoryData(data.data.history);
+            } catch (err) { console.error("Fetch history failed", err); }
+        };
         fetchHistory();
-
     }, [token]);
-
-    const fetchHistory = async () => {
-        try {
-            const res = await fetch(`${baseUrl}/history/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status === 'success') setHistoryData(data.data.history);
-        } catch (err) { console.error("Fetch history failed", err); }
-    };
 
     return (
         <motion.div

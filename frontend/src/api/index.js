@@ -1,15 +1,12 @@
 import axios from 'axios';
-
-export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const BASE_URL = API_URL;
-
+const RAW_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+export const API_URL = RAW_API_URL.endsWith('/api') ? RAW_API_URL : `${RAW_API_URL}/api`;
 const api = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
 });
-
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -20,17 +17,15 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
-
 export const authAPI = {
     login: (username, password) => api.post('/auth/login', { username, password }),
     register: (data) => api.post('/auth/register', data),
     refresh: () => api.post('/auth/refresh'),
 };
-
 export const chatAPI = {
     sendMessage: (message, history) => api.post('/chat/', { message, history }),
+    clearHistory: () => api.delete('/chat/clear'),
 };
-
 export const photoAPI = {
     upload: (formData, onProgress) => api.post('/photos/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -53,16 +48,13 @@ export const photoAPI = {
     delete: (id) => api.delete(`/photos/${id}`),
     getPhotos: () => api.get('/photos/'),
 };
-
 export const deliveryAPI = {
     shareWhatsApp: (data) => api.post('/delivery/share/whatsapp', data),
     shareEmail: (data) => api.post('/delivery/share/email', data),
 };
-
 export const faceAPI = {
     getFacesByPhoto: (photoId) => api.get(`/face/photo/${photoId}`),
     labelFace: (data) => api.post('/face/label', data),
     getPersons: () => api.get('/face/persons'),
 };
-
 export default api;

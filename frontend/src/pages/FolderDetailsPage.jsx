@@ -3,6 +3,9 @@ import { useOutletContext, useParams, useLocation, useNavigate } from 'react-rou
 import FolderDetails from '../components/FolderDetails';
 import { motion } from 'framer-motion';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+
 export default function FolderDetailsPage() {
     const { token } = useOutletContext();
     const { id } = useParams();
@@ -11,28 +14,24 @@ export default function FolderDetailsPage() {
     const [folder, setFolder] = useState(location.state?.folder || null);
     const [folderPhotos, setFolderPhotos] = useState([]);
 
-    const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const baseUrl = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
-
     useEffect(() => {
         if (!folder) {
-
             navigate('/dashboard/folders');
             return;
         }
+
+        const fetchFolderPhotos = async (personId) => {
+            try {
+                const res = await fetch(`${baseUrl}/dashboard/folders/${personId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.status === 'success') setFolderPhotos(data.data);
+            } catch (err) { console.error(err); }
+        };
+
         fetchFolderPhotos(id);
-
-    }, [id, token]);
-
-    const fetchFolderPhotos = async (personId) => {
-        try {
-            const res = await fetch(`${baseUrl}/dashboard/folders/${personId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data.status === 'success') setFolderPhotos(data.data);
-        } catch (err) { console.error(err); }
-    };
+    }, [id, folder, navigate, token]);
 
     const handleRenameFolder = async (personId, newName) => {
         try {
@@ -87,7 +86,6 @@ export default function FolderDetailsPage() {
 
     const handlePhotoDelete = async (photoId) => {
         if (!window.confirm("Are you sure you want to permanently delete this photo? This will also remove all associated AI face data and sharing history.")) return;
-
         try {
             const res = await fetch(`${baseUrl}/photos/${photoId}`, {
                 method: 'DELETE',

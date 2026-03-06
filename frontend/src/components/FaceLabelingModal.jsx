@@ -3,7 +3,6 @@ import { X, User, Check, Loader2 } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalStateContext';
 import { faceAPI, API_URL } from '../api';
 import toast from 'react-hot-toast';
-
 export default function FaceLabelingModal({ photo, onClose, onComplete }) {
     const { fetchPersons } = useGlobalState();
     const [faces, setFaces] = useState([]);
@@ -13,7 +12,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
     const [submitting, setSubmitting] = useState(false);
     const imgRef = useRef(null);
     const [imgRenderSize, setImgRenderSize] = useState({ width: 0, height: 0, naturalWidth: 0, naturalHeight: 0 });
-
     const fetchFaces = useCallback(async () => {
         try {
             const res = await faceAPI.getFacesByPhoto(photo.id);
@@ -22,7 +20,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                     setFaces(res.data.data);
                     setLoading(false);
                 } else {
-
                     setTimeout(fetchFaces, 2000);
                 }
             }
@@ -31,13 +28,10 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             setLoading(false);
         }
     }, [photo.id]);
-
     useEffect(() => {
         fetchFaces();
     }, [fetchFaces]);
-
     const unlabeledFaces = faces.filter(f => f.person_id === null);
-
     const handleImageLoad = (e) => {
         setImgRenderSize({
             width: e.target.width,
@@ -46,24 +40,20 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             naturalHeight: e.target.naturalHeight
         });
     };
-
     const handleLabelFace = async () => {
         if (!personName.trim() || submitting) return;
         setSubmitting(true);
         const currentFace = unlabeledFaces[currentFaceIndex];
-
         try {
             const res = await faceAPI.labelFace({
                 photo_id: photo.id,
                 face_id: currentFace.id,
                 person_name: personName.trim()
             });
-
             if (res.data.status === 'success') {
                 toast.success(`Labeled as ${personName.trim()}`);
                 setPersonName('');
                 await fetchPersons();
-
                 if (currentFaceIndex + 1 < unlabeledFaces.length) {
                     setCurrentFaceIndex(currentFaceIndex + 1);
                 } else {
@@ -76,14 +66,11 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             setSubmitting(false);
         }
     };
-
     const getBoundingBoxStyle = (face) => {
         if (!face.bounding_box || !imgRenderSize.naturalWidth) return { display: 'none' };
         const [x1, y1, x2, y2] = face.bounding_box;
-
         const scaleX = imgRenderSize.width / imgRenderSize.naturalWidth;
         const scaleY = imgRenderSize.height / imgRenderSize.naturalHeight;
-
         return {
             left: `${x1 * scaleX}px`,
             top: `${y1 * scaleY}px`,
@@ -91,7 +78,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             height: `${(y2 - y1) * scaleY}px`
         };
     };
-
     if (loading) {
         return (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -103,7 +89,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             </div>
         );
     }
-
     if (unlabeledFaces.length === 0) {
         return (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -120,9 +105,7 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
             </div>
         );
     }
-
     const currentFace = unlabeledFaces[currentFaceIndex];
-
     return (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <div className="bg-slate-800 rounded-3xl w-full max-w-4xl flex overflow-hidden shadow-2xl border border-slate-700">
@@ -143,13 +126,11 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                         />
                     </div>
                 </div>
-
                 {/* Form Section */}
                 <div className="w-1/3 p-8 flex flex-col justify-center bg-slate-800 relative">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition">
                         <X className="w-5 h-5" />
                     </button>
-
                     <div className="mb-2 text-xs font-semibold tracking-wider text-warning uppercase">
                         Face {currentFaceIndex + 1} of {unlabeledFaces.length}
                     </div>
@@ -157,7 +138,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                     <p className="text-sm text-slate-400 mb-8">
                         Label this person so we can automatically group their photos in the future.
                     </p>
-
                     <div className="space-y-4">
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -181,7 +161,6 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                             {submitting ? 'Saving...' : 'Save Label'}
                         </button>
                     </div>
-
                     <div className="mt-8 flex justify-center gap-2">
                         {unlabeledFaces.map((_, idx) => (
                             <div
