@@ -54,6 +54,7 @@ backend/db_check_light.py
 backend/retrigger_faces.py
 backend/retrigger_light.py
 backend/db_diag.py
+backend/check_logs.py
 
 # Database
 *.db

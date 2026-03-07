@@ -17,7 +17,7 @@ def log_chat_async(app, user_id, query, response, is_fallback=False):
         try:
             new_log = ChatLog(
                 user_id=user_id,
-                query=query,
+                user_query=query, # Updated from query to user_query
                 response=response,
                 is_fallback=is_fallback
             )
@@ -66,10 +66,15 @@ def chat():
 @jwt_required()
 def clear_chat():
     """Clear chat history for the current user"""
-    user_id = get_jwt_identity()
     try:
-        ChatLog.query.filter_by(user_id=user_id).delete()
+        # Explicitly cast user_id to int to avoid potential type mismatch with DB column
+        user_id = int(get_jwt_identity())
+        
+        # Now that 'query' column is renamed to 'user_query', we can use ChatLog.query safely.
+        deleted_count = ChatLog.query.filter_by(user_id=user_id).delete(synchronize_session=False)
         db.session.commit()
+        
+        current_app.logger.info(f"Cleared {deleted_count} chat log entries for user_id: {user_id}")
         return success_response(message="Chat history cleared successfully")
     except Exception as e:
         db.session.rollback()

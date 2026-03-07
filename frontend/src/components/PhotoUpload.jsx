@@ -70,7 +70,7 @@ export default function PhotoUpload({ uploading, setUploading, onUploadSuccess }
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white shadow-lg transition-all disabled:opacity-50 active:scale-95"
             >
                 <UploadCloud className="w-4 h-4" />
-                {uploading ? 'Uploading...' : 'Add Photos'}
+                {uploading ? 'Uploading...' : 'Upload Photos'}
             </button>
             <input
                 ref={fileInputRef}
