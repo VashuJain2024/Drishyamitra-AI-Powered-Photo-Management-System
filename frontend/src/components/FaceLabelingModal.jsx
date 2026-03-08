@@ -107,10 +107,10 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
     }
     const currentFace = unlabeledFaces[currentFaceIndex];
     return (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-3xl w-full max-w-4xl flex overflow-hidden shadow-2xl border border-slate-700">
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4">
+            <div className="bg-slate-800 rounded-2xl md:rounded-3xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden shadow-2xl border border-slate-700 max-h-[95vh]">
                 {/* Image Section */}
-                <div className="w-2/3 bg-slate-950 flex items-center justify-center relative p-8">
+                <div className="w-full md:w-2/3 bg-slate-950 flex items-center justify-center relative p-4 md:p-8">
                     <div className="relative inline-block">
                         <img
                             ref={imgRef}
@@ -127,14 +127,14 @@ export default function FaceLabelingModal({ photo, onClose, onComplete }) {
                     </div>
                 </div>
                 {/* Form Section */}
-                <div className="w-1/3 p-8 flex flex-col justify-center bg-slate-800 relative">
+                <div className="w-full md:w-1/3 p-6 md:p-8 flex flex-col justify-center bg-slate-800 relative border-t md:border-t-0 md:border-l border-slate-700/50">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-700 transition">
                         <X className="w-5 h-5" />
                     </button>
-                    <div className="mb-2 text-xs font-semibold tracking-wider text-warning uppercase">
+                    <div className="mb-2 text-[10px] md:text-xs font-semibold tracking-wider text-warning uppercase">
                         Face {currentFaceIndex + 1} of {unlabeledFaces.length}
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Who is this?</h3>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Who is this?</h3>
                     <p className="text-sm text-slate-400 mb-8">
                         Label this person so we can automatically group their photos in the future.
                     </p>

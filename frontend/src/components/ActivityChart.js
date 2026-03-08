@@ -69,9 +69,10 @@ export default function ActivityChart({ historyData }) {
                     <XAxis
                         dataKey="date"
                         stroke="#94a3b8"
-                        fontSize={12}
+                        fontSize={10}
                         tickLine={false}
                         axisLine={false}
+                        minTickGap={10}
                     />
                     <YAxis
                         stroke="#94a3b8"

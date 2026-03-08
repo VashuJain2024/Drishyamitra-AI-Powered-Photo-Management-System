@@ -11,7 +11,7 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
         );
     }
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
             <AnimatePresence>
                 {photos.map((p, i) => (
                     <motion.div
@@ -48,9 +48,9 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                                     )}
                                 </div>
                             )}
-                            {/* Hover Overlay with Action Buttons */}
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
-                                <div className="flex gap-2 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300 pointer-events-auto">
+                            {/* Hover Overlay with Action Buttons (Permanent on mobile) */}
+                            <div className="absolute inset-0 bg-slate-900/40 lg:bg-slate-900/60 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 lg:p-4 pointer-events-none">
+                                <div className="flex gap-2 w-full lg:translate-y-4 lg:group-hover:translate-y-0 transition-transform duration-300 pointer-events-auto">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onWhatsAppShare(p.id); }}
                                         className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-2 rounded-xl text-xs font-semibold shadow-lg transition-colors"
@@ -74,7 +74,7 @@ export default function Gallery({ photos, onWhatsAppShare, onEmailShare, onPhoto
                             </div>
                         </div>
                         { }
-                        <div className="p-4">
+                        <div className="p-3 md:p-4">
                             <p className="text-sm font-medium text-slate-200 truncate" title={p.filename}>
                                 {p.filename.split('_').slice(2).join('_')}
                             </p>

@@ -9,7 +9,7 @@ export default function Sidebar({ currentPath, onNavigate, onLogout, waStatus, o
         { id: '/dashboard/stats', label: 'Analytics', icon: BarChart2 },
     ];
     return (
-        <aside className="w-64 bg-slate-900/80 backdrop-blur-xl border-r border-slate-800 flex flex-col h-full z-20">
+        <aside className="hidden lg:flex w-64 bg-slate-900/80 backdrop-blur-xl border-r border-slate-800 flex-col h-full z-20">
             <div className="p-8">
                 <button
                     onClick={() => onNavigate('/dashboard')}

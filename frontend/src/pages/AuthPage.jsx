@@ -6,7 +6,7 @@ import { authAPI } from '../api';
 import toast from 'react-hot-toast';
 export default function AuthPage({ onLoginComplete }) {
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState('login'); 
+    const [mode, setMode] = useState('login');
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -44,15 +44,15 @@ export default function AuthPage({ onLoginComplete }) {
         }
     };
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 xs:p-6 relative overflow-hidden">
             { }
-            <div className="absolute top-0 right-0 w-96 h-96 bg-primary-600/20 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]" />
+            <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-primary-600/20 rounded-full blur-[80px] md:blur-[100px]" />
+            <div className="absolute bottom-0 left-0 w-64 md:w-96 h-64 md:h-96 bg-blue-600/20 rounded-full blur-[80px] md:blur-[100px]" />
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="z-10 w-full max-w-md bg-slate-800/60 backdrop-blur-xl border border-slate-700 p-10 rounded-3xl shadow-2xl"
+                className="z-10 w-full max-w-md bg-slate-800/60 backdrop-blur-xl border border-slate-700 p-6 md:p-10 rounded-2xl md:rounded-3xl shadow-2xl"
             >
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-white tracking-tight">

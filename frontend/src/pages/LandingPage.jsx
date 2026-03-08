@@ -26,14 +26,14 @@ export default function LandingPage() {
                         className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                     />
                 </motion.div>
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 flex items-center justify-center gap-2">
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 md:6 flex items-center justify-center gap-2">
                     Drishyamitra<span className="text-primary-400">AI</span>
                 </h1>
-                <h2 className="text-5xl md:text-7xl font-bold leading-tight mb-8">
-                    Your Memories, <br />
+                <h2 className="text-4xl md:text-7xl font-bold leading-tight mb-6 md:8 px-4">
+                    Your Memories, <br className="hidden xs:block" />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-blue-400">Perfectly</span> Organized.
                 </h2>
-                <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
+                <p className="text-lg md:text-xl text-slate-400 mb-8 md:12 max-w-2xl mx-auto px-4">
                     Experience the next generation of photo management with facial recognition and instant AI sharing.
                 </p>
                 <button

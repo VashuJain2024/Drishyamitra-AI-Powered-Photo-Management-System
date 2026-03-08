@@ -35,7 +35,7 @@ export default function FoldersPage() {
             className="space-y-8"
         >
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">Your Folders</h2>
+                <h2 className="text-xl md:text-3xl font-bold tracking-tight">Your Folders</h2>
             </div>
             <FolderList folders={folders} onFolderClick={handleFolderClick} />
         </motion.div>

@@ -78,7 +78,7 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
         return null;
     };
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div className="fixed bottom-4 right-4 xs:bottom-6 xs:right-6 z-50 flex flex-col items-end">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -86,9 +86,9 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-slate-800/90 backdrop-blur-xl border border-slate-700 shadow-2xl rounded-3xl w-[380px] h-[550px] flex flex-col mb-4 overflow-hidden relative"
+                        className="bg-slate-800/90 backdrop-blur-xl border border-slate-700 shadow-2xl rounded-2xl xs:rounded-3xl w-[calc(100vw-2rem)] xs:w-[350px] md:w-[380px] h-[550px] max-h-[80vh] flex flex-col mb-4 overflow-hidden relative"
                     >
-                        { }
+                        {/* Header */}
                         <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex justify-between items-center z-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center border border-primary-500/30 shadow-inner">
@@ -131,12 +131,11 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                     key={i}
                                     className={`flex flex-col ${m.role === 'bot' ? 'items-start' : 'items-end'}`}
                                 >
-                                    <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm shadow-md ${m.role === 'bot'
+                                    <div className={`max-w-[90%] md:max-w-[85%] rounded-2xl p-3 md:p-3.5 text-xs md:text-sm shadow-md ${m.role === 'bot'
                                         ? 'bg-slate-700/50 text-slate-200 rounded-tl-none border border-slate-600/50'
                                         : 'bg-primary-600 text-white rounded-tr-none'
                                         }`}>
                                         <p className="whitespace-pre-wrap">{m.content}</p>
-                                        { }
                                         {m.role === 'bot' && renderMessageData(m.data)}
                                         <span className={`text-[9px] mt-2 block opacity-60 ${m.role === 'bot' ? 'text-left' : 'text-right'}`}>
                                             {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
@@ -163,7 +162,7 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                             )}
                             <div ref={messagesEndRef} className="h-2" />
                         </div>
-                        { }
+                        {/* Input Area */}
                         <form onSubmit={onSendMessage} className="p-3 bg-slate-900/80 backdrop-blur-xl border-t border-slate-700 z-10 flex gap-2 items-center">
                             <button
                                 type="button"
@@ -179,7 +178,7 @@ export default function ChatAssistant({ messages, isOpen, onToggle, input, onInp
                                 placeholder={isListening ? "Listening..." : "Ask me anything..."}
                                 value={input}
                                 onChange={(e) => onInputChange(e.target.value)}
-                                className="flex-1 bg-slate-800 border border-slate-600 rounded-full px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all placeholder-slate-400"
+                                className="flex-1 bg-slate-800 border border-slate-600 rounded-full px-4 py-2.5 text-sm md:text-sm text-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all placeholder-slate-400"
                             />
                             <button
                                 type="submit"

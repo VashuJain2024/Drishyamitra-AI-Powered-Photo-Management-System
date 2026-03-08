@@ -4,9 +4,9 @@ import { FolderHeart } from 'lucide-react';
 export default function FolderList({ folders, onFolderClick }) {
     if (folders.length === 0) {
         return (
-            <div className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-16 text-center shadow-lg">
-                <FolderHeart className="w-16 h-16 text-slate-500 mx-auto mb-4 opacity-50" />
-                <p className="text-slate-400 text-lg">No folders yet. Try organizing your photos!</p>
+            <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl md:rounded-3xl p-8 md:p-16 text-center shadow-lg">
+                <FolderHeart className="w-12 h-12 md:w-16 md:h-16 text-slate-500 mx-auto mb-4 opacity-50" />
+                <p className="text-slate-400 text-base md:text-lg">No folders yet. Try organizing your photos!</p>
             </div>
         );
     }
@@ -20,11 +20,11 @@ export default function FolderList({ folders, onFolderClick }) {
                     transition={{ duration: 0.4, delay: i * 0.05 }}
                     whileHover={{ y: -5, scale: 1.02 }}
                     onClick={() => onFolderClick(folder)}
-                    className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-3xl p-8 cursor-pointer shadow-lg hover:border-primary-500/50 hover:shadow-primary-500/20 transition-all group relative overflow-hidden"
+                    className="bg-slate-800/60 backdrop-blur-xl border border-slate-700 rounded-2xl md:rounded-3xl p-6 md:p-8 cursor-pointer shadow-lg hover:border-primary-500/50 hover:shadow-primary-500/20 transition-all group relative overflow-hidden"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 rounded-full blur-3xl group-hover:bg-primary-500/10 transition-colors" />
-                    <div className="bg-slate-700/50 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <FolderHeart className="w-10 h-10 text-primary-400" />
+                    <div className="bg-slate-700/50 w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                        <FolderHeart className="w-8 h-8 md:w-10 md:h-10 text-primary-400" />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2 truncate">{folder.name}</h3>
                     <p className="text-sm text-slate-400 font-medium">
