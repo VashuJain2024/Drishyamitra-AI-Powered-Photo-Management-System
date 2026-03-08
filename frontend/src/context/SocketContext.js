@@ -15,7 +15,7 @@ export const SocketProvider = ({ children }) => {
             autoConnect: true,
         });
         newSocket.on('connect', () => {
-            console.log('Connected to WebSocket');
+            // console.log('Connected to WebSocket');
             newSocket.emit('join', { token });
         });
         newSocket.on('face_processed', (data) => {
