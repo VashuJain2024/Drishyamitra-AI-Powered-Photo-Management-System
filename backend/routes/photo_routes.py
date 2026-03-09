@@ -29,7 +29,9 @@ def upload():
         os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
         file.save(filepath)
         stats = os.stat(filepath)
+        current_app.logger.info(f"Photo uploaded: {filename}, Size: {stats.st_size} bytes, Type: {file.content_type}")
         if stats.st_size > current_app.config['MAX_CONTENT_LENGTH']:
+            current_app.logger.warning(f"File {filename} rejected: size {stats.st_size} exceeds limit {current_app.config['MAX_CONTENT_LENGTH']}")
             os.remove(filepath)
             return error_response(f"File too large. Maximum size is {current_app.config['MAX_CONTENT_LENGTH'] // (1024*1024)}MB", 413)
         photo = Photo(
@@ -81,6 +83,7 @@ def bulk_upload():
         try:
             file.save(filepath)
             stats = os.stat(filepath)
+            current_app.logger.info(f"Bulk photo saved: {filename}, Size: {stats.st_size} bytes, Type: {file.content_type}")
             photo = Photo(
                 filename=filename, 
                 filepath=filepath, 

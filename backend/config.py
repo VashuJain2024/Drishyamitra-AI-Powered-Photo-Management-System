@@ -35,7 +35,7 @@ class Config:
     UPLOAD_FOLDER      = os.path.join(basedir, 'data', 'photos')
     EMBEDDINGS_FOLDER  = os.path.join(basedir, 'data', 'embeddings')
     ORGANIZED_FOLDER   = os.path.join(basedir, 'data', 'organized')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  
+    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  
     FACE_MODEL    = os.environ.get('FACE_MODEL', 'Facenet512')
     FACE_DETECTOR = os.environ.get('FACE_DETECTOR', 'retinaface')
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')

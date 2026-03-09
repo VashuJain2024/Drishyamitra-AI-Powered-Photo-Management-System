@@ -51,11 +51,20 @@ def process_photo_faces(self, photo_id: int):
                 logger.error(f"process_photo_faces: Image missing at {abs_path}")
                 return {"status": "error", "message": "Image file missing"}
             logger.info(f"Starting face recognition pipeline for photo {photo_id} at {abs_path}")
+            
+            from PIL import Image
+            try:
+                with Image.open(abs_path) as img:
+                    width, height = img.size
+                    logger.info(f"Image {photo_id} dimensions: {width}x{height}")
+            except Exception as img_err:
+                logger.warning(f"Could not read image metadata for {photo_id}: {img_err}")
+
             service = FaceRecognitionService()
             logger.info("Stage 1: Detecting and extracting faces...")
             faces_data = service.detect_and_extract_faces(abs_path)
             if not faces_data:
-                logger.info(f"No faces found in photo {photo_id}")
+                logger.info(f"COMPLETED: No faces detected in photo {photo_id} ({abs_path})")
                 return {"status": "success", "message": "No faces detected", "count": 0}
             logger.info(f"Detected {len(faces_data)} faces. Stage 2: Extracting landmarks...")
             landmark_items = service.extract_faces_with_landmarks(abs_path)
